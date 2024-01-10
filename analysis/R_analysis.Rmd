@@ -1,0 +1,2689 @@
+---
+title: "R"
+author: "wangrong"
+date: "2024/1/8"
+output: workflowr::wflow_html
+code_folding: hide
+editor_options:
+  
+  chunk_output_type: console
+---
+
+```{r setup, echo=FALSE,eval=FALSE}
+knitr::opts_chunk$set(message=FALSE, error=FALSE, warning=FALSE)
+library(knitr)
+library(rmarkdown)
+```
+##  Data
+Code for generating fragments files for snATAC and counts matrix for snRNA was obtained from 10x genimics (https://support.10xgenomics.com/single-cell-multiome-atac-gex/software/pipelines/latest/what-is-cell-ranger-arc)
+
+The 10x mutiomics sequencing data generated in this study has been deposited in the Genemo Sequence Archive (Genomics, Protemics & Bioinformatics 2021) in National Genomics Data Center (Nuceic Acid Res 2022), China  National Center for Bioinformation / Beijing Institute of Genomics, Chinese Academy of Sciences (GSA-Human : HRA003439) that are publicly accessible at https://ngdc.cncb.ac.cn/gsa-human.
+
+
+##  Quality control
+Raw gene expression matrices were generated for each sample by the Cell Ranger ARC(V.2.0) Pipeline coupled with human reference version GRCh38. The output filtered gene expression matrices were analyzed by R software (v.4.1.1) with the Seurat package (v.4.0.3).
+Low-quality cells were removed if they met the following criteria: 
+
+(1) <800 &>25000 unique molecular identifiers (UMIs); 
+(2) <200 &>5000 genes which expressed  in less than three cells;
+(3) UMIs derived from the mitochondrial genome >15%.
+
+Identify doublets
+To remove potential doublets,  we applied DoubletFinder to identify potential doublets. After quality control, a total of 384,765 cells were remained. 
+```{r  DoubletFinder, eval=FALSE}
+library(tidyverse)
+library(Seurat)
+library(DoubletDecon)
+library(plyr)
+library(dplyr)
+library(Matrix)
+library(ggplot2)
+library(cowplot)
+library(Seurat)
+library(limma)
+library(DoubletFinder)
+
+batch_list=list("M1-1","M1-2","M1-3","M1-4","M1-5","M1-6","M1-7","M1-8","M1-9","M1-10",
+                "M2-1","M2-3","M2-4","M2-5","M2-6","M2-7","M2-8","M2-9","M2-10","M2-11","M2-12",
+                "M3-4","M3-5","M3-6","M3-7","M3-8","M3-9","M3-10",
+                "M5-1","M5-2","M5-3","M5-4","M5-5","M5-6","M5-7","M5-8","M5-9","M5-10")
+Timepoints=list("Day0","Day1","Day3","Day6","Day14","Day30","Day31","Day33","Day36","Day44",
+                "Day0","Day3","Day6","Day14","Day30","Day31","Day33","Day36","Day44","Day171","Day185",
+                "Day6","Day14","Day30","Day31","Day33","Day36","Day44",
+                "Day0","Day1","Day3","Day6","Day14","Day30","Day31","Day33","Day36","Day44")
+Participants=list("P1","P1","P1","P1","P1","P1","P1","P1","P1","P1",
+                  "P2","P2","P2","P2","P2","P2","P2","P2","P2","P2","P2",
+                  "P3","P3","P3","P3","P3","P3","P3",
+                  "P4","P4","P4","P4","P4","P4","P4","P4","P4","P4")
+for( i in 1:length(batch_list))
+{
+print(batch_list[[i]])
+dir=paste0('/database/wangrong/Results/0712_ATAC+RNA/',batch_list[[i]],'/outs/filtered_feature_bc_matrix')
+print(dir)
+s_object_data=Read10X(data.dir = dir)
+
+s_object=CreateSeuratObject(counts =s_object_data$`Gene Expression`, project = batch_list[[i]])
+s_object[["percent.mt"]] <- PercentageFeatureSet(s_object, pattern = "^MT-")
+print(dim(s_object))
+a=summary(s_object$nFeature_RNA)
+b=summary(s_object$nCount_RNA)
+c=summary(s_object$percent.mt)
+print(a)
+print(b)
+print(c)
+#QC percent.mt
+s_object <- subset(s_object, subset =  nFeature_RNA > 200 & nFeature_RNA < 5000 & nCount_RNA > 800 & nCount_RNA < 25000 & percent.mt <15)
+print(dim(s_object))
+a1=summary(s_object$nFeature_RNA)
+b1=summary(s_object$nCount_RNA)
+c1=summary(s_object$percent.mt)
+print(a1)
+print(b1)
+print(c1)
+#Normalize
+s_object <- NormalizeData(s_object, normalization.method = "LogNormalize", scale.factor = 10000)
+#FindVariableFeatures
+s_object <- FindVariableFeatures(s_object, selection.method = "vst", nfeatures = 2000)
+#Scale
+s_object <- ScaleData(s_object, features = rownames(s_object))
+#PCA
+s_object <- RunPCA(s_object, features = VariableFeatures(s_object),npcs = 20)
+#cluster
+name = paste0('/database/wangrong/Results/0712_ATAC+RNA/HIPPO/',batch_list[[i]], '_bef_double_umap.pdf')
+pdf(file = name)
+s_object <- FindNeighbors(s_object, dims = 1:20)
+s_object <- FindClusters(s_object, resolution = 0.3)
+s_object <- RunUMAP(s_object, dims = 1:20)
+p1<-DimPlot(s_object,reduction = "umap",pt.size = 0.5,label = TRUE)
+
+location="/database/wangrong/Results/0712_ATAC+RNA/HIPPO/"
+filename=paste0(batch_list[[i]],'_PBMC_example')
+newFiles=Improved_Seurat_Pre_Process(s_object, num_genes=50, write_files=FALSE)
+
+results=Main_Doublet_Decon(rawDataFile=newFiles$newExpressionFile, 
+                           groupsFile=newFiles$newGroupsFile, 
+                           filename=filename, 
+                           location=location,
+                           fullDataFile=NULL, 
+                           removeCC=FALSE, 
+                           species="hsa", 
+                           rhop=1, 
+                           write=TRUE, 
+                           PMF=TRUE, 
+                           useFull=FALSE, 
+                           heatmap=FALSE,
+                           centroids=TRUE,
+                           num_doubs=100, 
+                           only50=FALSE,
+                           min_uniq=4,
+                           nCores=6)
+dou=length(row.names(results$Final_doublets_groups))
+sing=length(row.names(results$Final_nondoublets_groups))
+p=dou/(sing+dou)
+print(p)
+
+DRS_doublet_table=results$DRS_doublet_table
+addmargins(table(DRS_doublet_table$isADoublet))
+DRS_doublet_table$Dlabel=factor(DRS_doublet_table$isADoublet,c(FALSE,TRUE),ordered = T, labels=c("Singlet","Doublet"))
+seuratObject=AddMetaData(s_object,DRS_doublet_table$Dlabel, col.name = "Dlabel")
+Idents(seuratObject)=seuratObject@meta.data$Dlabel
+dp1=DimPlot(seuratObject,reduction="umap")
+dp1=dp1 +
+  theme(legend.position="top") +
+  theme(axis.text = element_text(size=9),
+        axis.title = element_text(size=10),
+        legend.text = element_text(size=9))
+print(dp1)
+print(p1)
+dev.off()
+saveRDS(seuratObject,file=paste0('/database/wangrong/Results/0712_ATAC+RNA/HIPPO/',batch_list[[i]],'_BeforeDoublet.rds'))
+seuratObject@meta.data$Timepoints <- Timepoints[[i]]
+seuratObject@meta.data$Participants <- Participants[[i]]
+seuratObject_RemoveDoublet<-subset(x = seuratObject, Dlabel=="Singlet")
+print(dim(seuratObject_RemoveDoublet))
+a2=summary(seuratObject_RemoveDoublet$nFeature_RNA)
+b2=summary(seuratObject_RemoveDoublet$nCount_RNA)
+c2=summary(seuratObject_RemoveDoublet$percent.mt)
+print(a2)
+print(b2)
+print(c2)
+saveRDS(seuratObject_RemoveDoublet,file=paste0('/database/wangrong/Results/0712_ATAC+RNA/HIPPO/',batch_list[[i]],'_RemoveDoublet.rds'))
+
+}
+
+```
+We performed ATAC fragment data QC using the ArchR (v.1.0.) software. Cells with less than 1,000 or more than 50,000 sequencing fragments were filtered out. 
+```{r merge, eval=FALSE}
+library(Signac)
+library(Seurat)
+library(EnsDb.Hsapiens.v86)
+library(Signac)
+library(Seurat)
+library(GenomicRanges)
+library(future)
+plan("multiprocess", workers = 4)
+options(future.globals.maxSize = 50000 * 1024^2)
+
+batch_list=list("M1-1","M1-2","M1-3","M1-4","M1-5","M1-6","M1-7","M1-8","M1-9","M1-10",
+"M2-1","M2-2","M2-3","M2-4","M2-5","M2-6","M2-7","M2-8","M2-9","M2-10","M2-11","M2-12",
+"M3-1","M3-2","M3-3","M3-4","M3-5","M3-6","M3-7","M3-8","M3-9","M3-10",
+"M5-1","M5-2","M5-3","M5-4","M5-5","M5-6","M5-7","M5-8","M5-9","M5-10")
+gex<-list()
+for( i in 1:length(batch_list))
+{
+print(batch_list[[i]])
+dir=paste0('/database/wangrong/Results/0712_ATAC+RNA/',batch_list[[i]],'/outs/filtered_feature_bc_matrix')
+counts=Read10X(data.dir = dir)
+metadata <- read.csv(file = paste0('/database/wangrong/Results/0712_ATAC+RNA/',batch_list[[i]],'/outs/per_barcode_metrics.csv'),header = TRUE,row.names = 1)
+fragment.path <- paste0('/database/wangrong/Results/0712_ATAC+RNA/',batch_list[[i]],'/outs/atac_fragments.tsv.gz')
+annotation <- GetGRangesFromEnsDb(ensdb = EnsDb.Hsapiens.v86)
+seqlevelsStyle(annotation) <- 'UCSC'
+
+pbmc <- CreateSeuratObject(counts = counts$`Gene Expression`,assay = "RNA")
+pbmc[["ATAC"]] <- CreateChromatinAssay(counts = counts$Peaks,sep = c(":", "-"),fragments = fragment.path,annotation = annotation)
+DefaultAssay(pbmc) <- "ATAC"
+
+gex[[i]] = readRDS(file=paste0('/database/wangrong/Results/0712_ATAC+RNA/HIPPO/hippo/',batch_list[[i]],'_RemoveDoublet.rds'))
+print("gex is down!")
+pbmc <- subset(pbmc,cells=rownames(gex[[i]]@meta.data))
+print("RNA subset is doen!")
+pbmc <- NucleosomeSignal(pbmc)
+pbmc <- TSSEnrichment(pbmc)
+
+pbmc<-subset(x = pbmc,subset = nCount_ATAC < 50000 &nCount_ATAC > 1000 &nucleosome_signal < 5 &TSS.enrichment > 1)
+sub_gex <- subset(gex[[i]],cells=rownames(pbmc@meta.data))
+pbmc@meta.data <- cbind(sub_gex@meta.data,pbmc@meta.data)
+saveRDS(pbmc,paste0('/database/wangrong/Results/0712_ATAC+RNA/Signac/co_joint/',batch_list[[i]],'_cojoint.rds'))
+}
+
+cell_name_ids=C("M1-1","M1-2","M1-3","M1-4","M1-5","M1-6","M1-7","M1-8","M1-9","M1-10",
+                "M2-1","M2-2","M2-3","M2-4","M2-5","M2-6","M2-7","M2-8","M2-9","M2-10","M2-11","M2-12",
+                "M3-1","M3-2","M3-3","M3-4","M3-5","M3-6","M3-7","M3-8","M3-9","M3-10",
+                "M5-1","M5-2","M5-3","M5-4","M5-5","M5-6","M5-7","M5-8","M5-9","M5-10")
+batch_list=list("M1-1","M1-2","M1-3","M1-4","M1-5","M1-6","M1-7","M1-8","M1-9","M1-10",
+                "M2-1","M2-2","M2-3","M2-4","M2-5","M2-6","M2-7","M2-8","M2-9","M2-10","M2-11","M2-12",
+                "M3-1","M3-2","M3-3","M3-4","M3-5","M3-6","M3-7","M3-8","M3-9","M3-10",
+                "M5-1","M5-2","M5-3","M5-4","M5-5","M5-6","M5-7","M5-8","M5-9","M5-10")
+all_p=list()           
+for( i in 1:length(batch_list))
+{
+  all_p[[i]] = readRDS(file=paste0('/database/wangrong/Results/0712_ATAC+RNA/Signac/co_joint/',batch_list[[i]],'_cojoint.rds'))
+  DefaultAssay(all_p[[i]]) <- "ATAC"
+}
+PBMCmerge <- merge(all_p[[1]],all_p[2:length(batch_list)],add.cell.ids = cell_name_ids)
+saveRDS(PBMCmerge,file="/database/wangrong/Results/0712_ATAC+RNA/Signac/co_joint/5.14_merge_cojoint.rds")
+```
+
+##  Clustering and annotation
+
+To solve the problem of heterogeneity and fine clustering cells, we used R package lightHIPPO(Heterogeneity Induced Pre-Processing tool), and make full use of the zero value proportional to detect each gene in different levels of cell type heterogeneity. 
+```{r  lightHIPPO, eval=FALSE}
+##修改策略：先将zero inflation cutoff值设置得比较小，然后当第一个cluster达到smallest.cluster.num条件，被加入黑名单是，将它对应的zero inflation赋值给zero inflation cutoff
+selectCluster_to_proceed_inflation_JXY <- function(inflation.list, IDs, cluster.size.cutoff = 100,blacklist){
+  # inflation.list=inflation.tracking
+  # IDs=next_round_IDs
+  # cluster.size.cutoff = smallest.cluster.num
+  blacklist=unique(blacklist)
+  cluster.sizes <- table(IDs)
+  passed.clusters <- which(cluster.sizes >= cluster.size.cutoff)
+  if (!is.null(blacklist)){
+    passed.clusters <- passed.clusters[!(passed.clusters%in%blacklist)]
+  }
+  go_with_higher_inflation <- which.max(inflation.list[passed.clusters])
+  selected.cluster <- passed.clusters[go_with_higher_inflation]
+  return(selected.cluster)
+}
+
+library(JXYlightHippo,lib.loc = "/home/jiangxinyu/R/x86_64-pc-linux-gnu-library/4.1")
+library(Seurat,lib.loc = "/home/jiangxinyu/R/x86_64-pc-linux-gnu-library/4.1")
+library(sys,lib.loc = "/home/jiangxinyu/R/x86_64-pc-linux-gnu-library/4.1")
+library(Signac,lib.loc = "/home/wangrong/R/x86_64-pc-linux-gnu-library/4.2")
+time1 <- Sys.time()
+#dat <- as_matrix(Gex)#单样本数据用来测试
+dat <- readRDS("/database/wangrong/Results/0712_ATAC+RNA/Signac/co_joint/5.14_merge_cojoint.rds")
+dat <- dat@assays[["RNA"]]@counts
+dat <- as_matrix(dat)
+K.round = 600
+initial.labels = NULL
+initial.round = 0
+stop_at = 500
+correctByK = FALSE
+override.Zscore.cutoff = NULL
+smallest.cluster.num = 400
+random.num = 5000
+move.by.inflation = TRUE
+inflation_cutoff <- 0
+#lightHIPPO <- function(dat, K.round = 10, initial.labels = NULL, initial.round = 0, stop_at = 500, correctByK = FALSE, override.Zscore.cutoff = NULL, smallest.cluster.num = 200, random.num = 2500, move.by.inflation = TRUE){
+
+  require(irlba)
+  total.num.cell <- ncol(dat)
+  total.num.gene <- nrow(dat)
+
+  if(!is.null(initial.labels)){
+    if(length(initial.labels) != total.num.cell){
+      stop("Length of initial group labels doesn't match the number of cell.")
+    }
+    initial.round <- 0
+  }
+
+  if(!is.null(override.Zscore.cutoff)) {
+    Zscore.cutoff <- override.Zscore.cutoff
+  } else if(correctByK == FALSE){
+    Zscore.cutoff <- cut_off_zscore(total.num.gene)#根据基因数计算Zscore阈值 4.54
+  } else {
+    Zscore.cutoff <- cut_off_zscore(total.num.gene*K)
+  }
+
+  if(move.by.inflation == TRUE){
+
+    ### calculate the inflation number for each cluster based on a random set of genes ###
+    set.seed(1234567)
+    #从1：总gene.num随机出random.num个数
+    randomIDs <- sample(1:total.num.gene, random.num)
+
+    if(is.null(initial.labels) & initial.round > 0) {
+
+      initial_clusters <- initialize_HIPPO(dat, initial.round = initial.round, stop_at = stop_at, Zscore.cutoff = Zscore.cutoff)
+      next_round_IDs <- initial_clusters$next_round_IDs
+      res <- initial_clusters
+
+      selected.gene.list <- NULL
+      selected.gene.Zscore <- NULL
+      inflation.tracking <- NULL
+      for(i in 1:c(initial.round+1)){
+        inflation.tracking <- c(inflation.tracking, check_zero_inflation_numbers(dat[randomIDs, next_round_IDs%in%i], Zscore.cutoff = Zscore.cutoff))
+      }
+      names(inflation.tracking) <- 1:c(initial.round + 1)
+
+      for(i.round in (initial.round + 1):K.round){
+
+        go_with_higher_inflationID <- selectCluster_to_proceed_inflation_JXY(inflation.tracking, next_round_IDs, cluster.size.cutoff = smallest.cluster.num)
+        selected.dat <- dat[, next_round_IDs%in%go_with_higher_inflationID]
+        selected.res <- select_features_full(selected.dat, Zscore.cutoff = Zscore.cutoff)
+        selected.ID <- selected.res$selected
+        selected.Zscore <- selected.res$Zscore
+
+        new.subset.dat <- selected.dat[selected.ID, ]
+        clusterID <- run_kmeans_clustering(new.subset.dat)
+        next_round_IDs[next_round_IDs%in%go_with_higher_inflationID][clusterID == 2] <- i.round + 1
+        res$sequence <- c(res$sequence, go_with_higher_inflationID)
+
+        inflation.tracking[go_with_higher_inflationID] <- check_zero_inflation_numbers(dat[randomIDs, next_round_IDs%in%go_with_higher_inflationID], Zscore.cutoff = Zscore.cutoff)
+        inflation.tracking <- c(inflation.tracking, check_zero_inflation_numbers(dat[randomIDs, next_round_IDs%in%(i.round+1)], Zscore.cutoff = Zscore.cutoff))
+        names(inflation.tracking)[i.round+1] <- i.round+1
+
+        selected.gene.list[[i.round]] <- selected.ID
+        selected.gene.Zscore[[i.round]] <- selected.Zscore
+      }
+      res$next_round_IDs <- next_round_IDs
+      names(res$sequence) <- 1:length(res$sequence)+2
+      res$selected.gene.list <- selected.gene.list
+      res$selected.gene.Zscore <- selected.gene.Zscore
+      res$type <- "Rooted"
+      res$initial.clusters <- NULL
+
+    } else if(is.null(initial.labels) & initial.round == 0) {
+
+      res <- NULL
+      res$sequence <- NULL
+      inflation.tracking <- NULL
+      selected.gene.list <- NULL
+      selected.gene.Zscore <- NULL
+      blacklist <- NULL
+      i.label <- 0
+      for(i.round in (initial.round + 1):K.round){
+        i.round <- i.round-i.label
+        if(i.round == 1){
+
+          selected.res <- select_features_full(dat, Zscore.cutoff = Zscore.cutoff)
+          selected.ID <- selected.res$selected
+          selected.Zscore <- selected.res$Zscore
+          new.subset.dat <- dat[selected.ID, ]
+          clusterID <- run_kmeans_clustering(new.subset.dat)
+          next_round_IDs <- clusterID
+          #随机抽样检查每一簇中的inflation gene
+          inflation.tracking[1] <- check_zero_inflation_numbers(dat[randomIDs, next_round_IDs==1], Zscore.cutoff = Zscore.cutoff)
+          inflation.tracking[2] <- check_zero_inflation_numbers(dat[randomIDs, next_round_IDs==2], Zscore.cutoff = Zscore.cutoff)
+          names(inflation.tracking) <- c(1:2)
+
+          selected.gene.list[[i.round]] <- selected.ID
+          selected.gene.Zscore[[i.round]] <- selected.Zscore
+
+        } else {
+          #选出inflation cluster ID
+          print(inflation.tracking)
+          go_with_higher_inflationID <- selectCluster_to_proceed_inflation_JXY(inflation.tracking, next_round_IDs, cluster.size.cutoff = smallest.cluster.num,blacklist = blacklist)
+          if(!length(go_with_higher_inflationID)){
+            break
+          }
+          selected.dat <- dat[, next_round_IDs%in% go_with_higher_inflationID]
+          selected.res <- select_features_full(selected.dat, Zscore.cutoff = Zscore.cutoff)
+          selected.ID <- selected.res$selected
+          selected.Zscore <- selected.res$Zscore
+
+          new.subset.dat <- selected.dat[selected.ID, ]
+          #将选择出的inflation cluster 继续分
+          clusterID <- run_kmeans_clustering(new.subset.dat)
+          #table(clusterID)
+          if(length(blacklist)==1){
+            inflation_cutoff <- inflation.tracking[blacklist]
+          }
+          blacklist <- c(blacklist,which(inflation.tracking<0.8*inflation_cutoff))
+          blacklist <- unique(blacklist)
+          flag=table(clusterID)<smallest.cluster.num
+          if (flag[1]|flag[2]){
+            #加入黑名单 表明这个cluster无需再分
+            blacklist <- c(blacklist,go_with_higher_inflationID)
+            i.label <- i.label+1
+            next
+          }
+          #将next_round_IDs中的inflation cluster分出的“2”贴上新的标签
+          next_round_IDs[next_round_IDs%in%go_with_higher_inflationID][clusterID == 2] <- i.round + 1
+          print(table(next_round_IDs))
+          #将inflationID做一个记录
+          res$sequence <- c(res$sequence, go_with_higher_inflationID)
+          #更新inflation.tracking（原来inflation cluster的inflation number会下降）
+          inflation.tracking[go_with_higher_inflationID] <- check_zero_inflation_numbers(dat[randomIDs, next_round_IDs%in%go_with_higher_inflationID], Zscore.cutoff = Zscore.cutoff)
+          #check new cluster的inflaton gene number  and lables
+          inflation.tracking <- c(inflation.tracking, check_zero_inflation_numbers(dat[randomIDs, next_round_IDs%in%(i.round+1)], Zscore.cutoff = Zscore.cutoff))
+          names(inflation.tracking)[i.round+1] <- i.round+1
+
+          selected.gene.list[[i.round]] <- selected.ID
+          selected.gene.Zscore[[i.round]] <- selected.Zscore
+          print(i.round)
+        }
+
+      }
+      res$next_round_IDs <- next_round_IDs
+      names(res$sequence) <- 1:length(res$sequence)+2
+      res$selected.gene.list <- selected.gene.list
+      res$selected.gene.Zscore <- selected.gene.Zscore
+      res$type <- "Rooted"
+      res$initial.clusters <- NULL
+
+    } else if(!is.null(initial.labels)) {
+
+      res <- NULL
+      res$sequence <- NULL
+      selected.gene.list <- NULL
+      selected.gene.Zscore <- NULL
+
+      next_round_IDs <- initial.labels
+
+      inflation.tracking <- NULL
+      for(i in 1:max(initial.labels)){
+        inflation.tracking <- c(inflation.tracking, check_zero_inflation_numbers(dat[randomIDs, next_round_IDs%in%i], Zscore.cutoff = Zscore.cutoff))
+      }
+      names(inflation.tracking) <- 1:max(initial.labels)
+
+      for(i.round in (max(initial.labels)):(K.round+max(initial.labels)-1)){
+
+        go_with_higher_inflationID <- selectCluster_to_proceed_inflation(inflation.tracking, next_round_IDs, cluster.size.cutoff = smallest.cluster.num)
+        selected.dat <- dat[, next_round_IDs%in% go_with_higher_inflationID]
+        selected.res <- select_features_full(selected.dat, Zscore.cutoff = Zscore.cutoff)
+        selected.ID <- selected.res$selected
+        selected.Zscore <- selected.res$Zscore
+
+        new.subset.dat <- selected.dat[selected.ID, ]
+        clusterID <- run_kmeans_clustering(new.subset.dat)
+        next_round_IDs[next_round_IDs%in%go_with_higher_inflationID][clusterID == 2] <- i.round + 1
+        res$sequence <- c(res$sequence, go_with_higher_inflationID)
+
+        inflation.tracking[go_with_higher_inflationID] <- check_zero_inflation_numbers(dat[randomIDs, next_round_IDs%in%go_with_higher_inflationID], Zscore.cutoff = Zscore.cutoff)
+        inflation.tracking <- c(inflation.tracking, check_zero_inflation_numbers(dat[randomIDs, next_round_IDs%in%(i.round+1)], Zscore.cutoff = Zscore.cutoff))
+        names(inflation.tracking)[i.round+1] <- i.round+1
+
+        selected.gene.list[[i.round]] <- selected.ID
+        selected.gene.Zscore[[i.round]] <- selected.Zscore
+
+      }
+
+      res$next_round_IDs <- next_round_IDs
+      names(res$sequence) <- 1:length(res$sequence)+max(initial.labels)
+      res$selected.gene.list <- selected.gene.list
+      res$selected.gene.Zscore <- selected.gene.Zscore
+      res$type <- "Truncated"
+      res$initial.clusters <- initial.labels
+    }
+
+  }
+
+  if(move.by.inflation == FALSE) {
+
+    ### calculating first 10 PCs
+    first_pcs <- tryCatch(expr = {
+      irlba::irlba(log1p(dat), 10)$v
+    }, error = function(e) NA, warning = function(w) NA)
+
+    if(is.null(initial.labels) & initial.round > 0) {
+
+      initial_clusters <- initialize_HIPPO(dat, initial.round = initial.round, stop_at = stop_at, Zscore.cutoff = Zscore.cutoff)
+      next_round_IDs <- initial_clusters$next_round_IDs
+      res <- initial_clusters
+
+      selected.gene.list <- NULL
+      selected.gene.Zscore <- NULL
+      cluster.heterogeneity.tracking <- NULL
+
+      kkk <- apply(first_pcs, 2, function(x){
+        tapply(x, next_round_IDs, var)
+      })
+      cluster.heterogeneity.tracking <- apply(kkk, 1, sum)*table(next_round_IDs)
+
+      for(i.round in (initial.round + 1):K.round){
+
+        go_with_larger_varianceID <- selectCluster_to_proceed(cluster.heterogeneity.tracking, next_round_IDs, cluster.size.cutoff = smallest.cluster.num)
+        selected.dat <- dat[, next_round_IDs%in%go_with_larger_varianceID]
+        selected.res <- select_features_full(selected.dat, Zscore.cutoff = Zscore.cutoff)
+        selected.ID <- selected.res$selected
+        selected.Zscore <- selected.res$Zscore
+
+        new.subset.dat <- selected.dat[selected.ID, ]
+        clusterID <- run_kmeans_clustering(new.subset.dat)
+
+        new.clusters.var <- apply(first_pcs[next_round_IDs%in%go_with_larger_varianceID, ], 2, function(x){
+          tapply(x, clusterID, var)
+        })
+
+        next_round_IDs[next_round_IDs%in%go_with_larger_varianceID][clusterID == 2] <- i.round + 1
+        res$sequence <- c(res$sequence, go_with_larger_varianceID)
+
+        new.cluster.heterogeneity.tracking <- apply(new.clusters.var, 1, sum)*table(clusterID)
+        cluster.heterogeneity.tracking[go_with_larger_varianceID] <- new.cluster.heterogeneity.tracking[1]
+        cluster.heterogeneity.tracking <- c(cluster.heterogeneity.tracking, new.cluster.heterogeneity.tracking[2])
+        names(cluster.heterogeneity.tracking)[i.round + 1] <-  i.round + 1
+
+        selected.gene.list[[i.round]] <- selected.ID
+        selected.gene.Zscore[[i.round]] <- selected.Zscore
+
+      }
+
+      res$next_round_IDs <- next_round_IDs
+      names(res$sequence) <- 1:length(res$sequence)+2
+      res$selected.gene.list <- selected.gene.list
+      res$selected.gene.Zscore <- selected.gene.Zscore
+      res$type <- "Rooted"
+      res$initial.clusters <- NULL
+
+    }
+
+
+  }
+  time2 <- Sys.time()
+  print(time2-time1)
+  saveRDS(res,"/database/jiangxinyu/Result/Data/0516_Total_cojoint_res_400cells_random5000_improve0.8.rds")
+```
+After pruning the excess levels, 33 iterative clusters were obtained, and we defined 13 cell types by manually annotating cells based on the RNA expression of known marker genes. For multi-set sequencing, we used Archr (Methods) “addHarmony()” for sample-based batch correction and then used latent semantic index (LSI) to obtain low-dimensional embedding in RNA, ATAC, and combination, respectively.
+
+```{r archr, eval=FALSE}
+library(Matrix)
+library(ggplot2)
+library(cowplot)
+library(Seurat)
+library(limma)
+library(scater)
+library(HIPPO)
+library(lightHippo)
+library(irlba)
+co_all <-  readRDS("/database/wangrong/Results/0712_ATAC+RNA/Signac/co_joint/5.14_merge_cojoint.rds")
+n200 <- readRDS("/database/jiangxinyu/Result/Data/0516_Total_cojoint_res_200cells_random5000_improve0.8.rds")
+n400 <- readRDS("/database/jiangxinyu/Result/Data/0516_Total_cojoint_res_400cells_random5000_improve0.8.rds")
+visualize_hippo_hierarchy(n200)
+visualize_hippo_hierarchy(n400)
+co_all@meta.data$n200 <- n200$next_round_IDs
+table(co_all@meta.data$n200)
+Idents(co_all) <- co_all$n200
+pbmc.marker <- read_excel("/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/hsPBMC_markers_v3--wangrong.xlsx")
+DotPlot(co_all, features = unique(pbmc.marker$Gene) ,col.min=-2, col.max=2)+ RotatedAxis()+ scale_color_gradient2(high="red",mid = "pink",low ="white", midpoint = 0)
+
+
+new.clusters_33 <- cut_hierarchy(n200, K = 33, cut_sequence = TRUE)
+visualize_hippo_hierarchy(new.clusters_33)
+co_all@meta.data$n200_k33 <- new.clusters_33$labels
+table(co_all@meta.data$n200_k33)
+Idents(co_all) <- co_all$n200_k33
+DotPlot(co_all, features = unique(pbmc.marker$Gene) ,col.min=-2, col.max=2)+ RotatedAxis()+ scale_color_gradient2(high="red",mid = "lightgrey",low ="darkblue", midpoint = 0)
+DotPlot(co_all, features = unique(pbmc.marker[31:60,]$Gene),col.min=-2, col.max=2)+ RotatedAxis()+ scale_color_gradient2(high="red",mid = "lightgrey",low ="darkblue", midpoint = 0)
+DotPlot(co_all, features = c("CD3D","CD8A","CD8B","CD4","CD40LG","CCR7","CD27","MK167","CXCR5","FOXP3","GZMB","IFNG","TRDV2","TRGV9","TRAV1","NCAM1","NCR1","FCGR3A","IL2","IL1A","IL1B","IL10","IL22","TNF","LTA","IL4","IL5","IL13","IL17A","IL17F","IL21","IL12A","IL12B"),scale = FALSE,col.min=-2, col.max=2,idents=c('3','4','5','6','7','10','9','12','13','16','17','18','19','22','23','25','26','27','30','32','33'))+ RotatedAxis()+ scale_color_gradient2(high="red",mid = "lightgrey",low ="darkblue", midpoint = 0)
+
+
+reference <- LoadH5Seurat("/database/wangrong/Results/0712_ATAC+RNA/HIPPO/pbmc_multimodal.h5seurat")
+pbmc3k <- SCTransform(co_all, verbose = FALSE)
+anchors <- FindTransferAnchors(
+  reference = reference,
+  query = pbmc3k,
+  normalization.method = "SCT",
+  reference.reduction = "spca",
+  dims = 1:50
+)
+pbmc3k <- MapQuery(
+  anchorset = anchors,
+  query = pbmc3k,
+  reference = reference,
+  refdata = list(
+    celltype.l1 = "celltype.l1",
+    celltype.l2 = "celltype.l2",
+    predicted_ADT = "ADT"
+  ),
+  reference.reduction = "spca", 
+  reduction.model = "wnn.umap"
+)
+
+p1 <- DimPlot(pbmc3k, reduction = "ref.umap", group.by = "predicted.celltype.l2", label = TRUE, label.size = 3 ,repel = TRUE) + NoLegend()+ggsci::scale_color_igv()
+p2 <- DimPlot(pbmc3k, reduction = "ref.umap", group.by = "n200_k33", label = TRUE, label.size = 3 ,repel = TRUE) + NoLegend()+ggsci::scale_color_igv()
+p1 + p2
+table(pbmc3k$n200_k33,pbmc3k$predicted.celltype.l2)
+b <- table(pbmc3k$n200_k33,pbmc3k$predicted.celltype.l2)
+b <- as.data.frame(b)
+colnames(b)<-c("ours", "azimuth", 'value')
+b<-b %>%group_by(ours) %>%mutate(freq = value / sum(value))
+ggplot(a,aes(x=ours,y=azimuth,fill=freq))+
+  geom_tile(colour="white",size=0.2)+
+  scale_fill_distiller(palette = "Spectral")+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+coord_fixed()
+
+#c
+c <- table(pbmc3k$n200,pbmc3k$predicted.celltype.l2)
+c <- as.data.frame(c)
+colnames(c)<-c("ours", "azimuth", 'value')
+c<-c %>%group_by(ours) %>%mutate(freq = value / sum(value))
+ggplot(c,aes(x=ours,y=azimuth,fill=freq))+
+  geom_tile(colour="white",size=0.2)+
+  scale_fill_distiller(palette = "Spectral")+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+coord_fixed()
+
+head(Idents(co_all))
+My_levels <- c('1','14','20','31','11','2','8','28','21','29','6','15','24','9','27','4','7','12','16','23','33','5','18','32','22','3','17','25','26','10','13','30','19')
+Idents(co_all) <- factor(Idents(co_all), levels= My_levels)
+new.cluster.ids <- c("CD16+ Mono", "CD14+ Mono_1","CD14+ Mono_2","CD14+ Mono_3","Plasmacytoid DC",   "Naïve B_1", "Naïve B_2","Naïve B_3","Memory B"," Intermediate B", "NK/NKT_1", "NK/NKT_2", "NK/NKT_3", "Naïve CD8+ T cells_1", "Naïve CD8+ T cells_2", "CD8+ Tem_1", "CD8+ Tem_2", "CD8+ Tem_3", "CD8+ Tem_4","CD8+ Tem_5", "CD8+ Tem_6", "Naïve CD4+ T cells_1","Naïve CD4+ T cells_2","Naïve CD4+ T cells_3","Treg", "CD4+ Tcm_1","CD4+ Tcm_2", "CD4+ Tcm_3", "CD4+ Tcm_4","CD4+ Tcm_5","CD4+ Tcm_6", "MAIT","CD14+ Mono_4")
+names(new.cluster.ids) <- levels(co_all)
+rename_pbmc <- RenameIdents(co_all, new.cluster.ids)
+
+new.cluster.ids <- c("CD16+ Mono", "CD14+ Mono","CD14+ Mono","CD14+ Mono","Plasmacytoid DC",   "Naïve B", "Naïve B","Naïve B","Memory B"," Intermediate B", "NK/NKT", "NK/NKT", "NK/NKT", "Naïve CD8+ T cells", "Naïve CD8+ T cells", "CD8+ Tem", "CD8+ Tem", "CD8+ Tem", "CD8+ Tem","CD8+ Tem", "CD8+ Tem_6", "Naïve CD4+ T cells","Naïve CD4+ T cells","Naïve CD4+ T cells","Treg", "CD4+ Tcm","CD4+ Tcm", "CD4+ Tcm", "CD4+ Tcm","CD4+ Tcm","CD4+ Tcm", "MAIT","CD14+ Mono")
+names(new.cluster.ids) <- levels(rename_pbmc)
+rename_pbmc <- RenameIdents(rename_pbmc, new.cluster.ids)
+saveRDS(rename_pbmc,"/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/5.17.annotation.signac.RDS")
+metadata<-rename_pbmc@meta.data
+
+library(ArchR)
+library(pheatmap)
+library(Seurat) 
+library(ggplot2)
+addArchRThreads(threads = 96)
+addArchRGenome("hg38")
+
+batch_list=list("M1-1","M1-2","M1-3","M1-4","M1-5","M1-6","M1-7","M1-8","M1-9","M1-10",
+"M2-1","M2-2","M2-3","M2-4","M2-5","M2-6","M2-7","M2-8","M2-9","M2-10","M2-11","M2-12",
+"M3-1","M3-2","M3-3","M3-4","M3-5","M3-6","M3-7","M3-8","M3-9","M3-10",
+"M5-1","M5-2","M5-3","M5-4","M5-5","M5-6","M5-7","M5-8","M5-9","M5-10")
+
+name_list=c("M1-1","M1-2","M1-3","M1-4","M1-5","M1-6","M1-7","M1-8","M1-9","M1-10",
+"M2-1","M2-2","M2-3","M2-4","M2-5","M2-6","M2-7","M2-8","M2-9","M2-10","M2-11","M2-12",
+"M3-1","M3-2","M3-3","M3-4","M3-5","M3-6","M3-7","M3-8","M3-9","M3-10",
+"M5-1","M5-2","M5-3","M5-4","M5-5","M5-6","M5-7","M5-8","M5-9","M5-10")
+
+arrowlist<-c()
+for(i in 1:length(batch_list)){
+  arrowlist<-c(arrowlist,paste0('/database/wangrong/Results/0712_ATAC+RNA/atac_output/ArrowFiles/',batch_list[[i]],'.arrow'))
+}										
+archrproj <- ArchRProject(ArrowFiles = arrowlist,outputDirectory = "/database/wangrong/Results/0712_ATAC+RNA/atac_output",copyArrows = FALSE)
+archrproj
+
+atac_input<-c()
+for(i in 1:length(batch_list)){
+  atac_input<-c(atac_input,paste0('/database/wangrong/Results/0712_ATAC+RNA/',batch_list[[i]],'/outs/atac_fragments.tsv.gz'))
+}
+ArrowFiles<- createArrowFiles(inputFiles = atac_input,sampleNames = name_list)
+
+rna_input<-c()
+for(i in 1:length(batch_list)){
+  rna_input<-c(rna_input,paste0('/database/wangrong/Results/0712_ATAC+RNA/',batch_list[[i]],'/outs/filtered_feature_bc_matrix.h5'))
+}
+seRNA <- import10xFeatureMatrix(input = rna_input,names = name_list,featureType = "Gene Expression")
+
+projpbmc <- ArchRProject(ArrowFiles = ArrowFiles,outputDirectory = "/database/wangrong/Results/0712_ATAC+RNA/atac_output")
+new_ArrowFiles<-addGeneExpressionMatrix(input=projpbmc, seRNA=seRNA)
+proj <- new_ArrowFiles
+saveRDS(proj,"/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/5.24.arch.RDS",compress =  F)
+metadata<-read.table('/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/sample_metadata.csv', sep = ",", header = TRUE)
+rownames(metadata) <- gsub("_","#",rownames(metadata))
+length(rownames(metadata))
+a <- rownames(metadata)
+b <- a[!is.na(match(a,getCellNames(proj)))]
+proj <- subsetArchRProject(proj,cells = b,outputDirectory = "/database/wangrong/Results/0712_ATAC+RNA/atac_output/ArchRSubset")
+dim(metadata[!is.na(match(rownames(metadata),b)),])
+c=metadata[!is.na(match(rownames(metadata),b)),]
+proj <- addCellColData(ArchRProj = proj,data = c$annotation,name = "annotation",cells = getCellNames(proj),force = FALSE)
+proj <- addCellColData(ArchRProj = proj,data = c$celltype,name = "celltype",cells = getCellNames(proj),force = FALSE)
+proj <- addIterativeLSI(ArchRProj = proj, clusterParams = list(resolution = 0.2, sampleCells = 10000,n.start = 10),saveIterations = FALSE,useMatrix = "TileMatrix", depthCol = "nFrags",name = "LSI_ATAC")
+proj <- addIterativeLSI(ArchRProj = proj, clusterParams = list(resolution = 0.2, sampleCells = 10000,n.start = 10),saveIterations = FALSE,useMatrix = "GeneExpressionMatrix", depthCol = "Gex_nUMI",varFeatures = 2500,firstSelection = "variable",binarize = FALSE,name = "LSI_RNA")
+#Combined Dims
+proj <- addCombinedDims(proj, reducedDims = c("LSI_ATAC", "LSI_RNA"), name =  "LSI_Combined")
+proj <- addUMAP(proj, reducedDims = "LSI_ATAC", name = "UMAP_ATAC", minDist = 0.8, force = TRUE)
+proj <- addUMAP(proj, reducedDims = "LSI_RNA", name = "UMAP_RNA", minDist = 0.8, force = TRUE)
+proj <- addUMAP(proj, reducedDims = "LSI_Combined", name = "UMAP_Combined", minDist = 0.8, force = TRUE)
+proj <- addHarmony(ArchRProj = proj,reducedDims = "IterativeLSI",name = "Harmony",groupBy = "Sample")
+proj <- addClusters(proj, reducedDims = "IterativeLSI", name = "Clusters", resolution = 0.4, force = TRUE)
+p1 <- plotEmbedding(archrproj, name = "celltype", embedding = "UMAP_ATAC", pal=c13_match,colorBy = "cellColData",size = 0.8, labelAsFactors=F, labelMeans=F)
+p2 <- plotEmbedding(archrproj, name = "celltype", embedding = "UMAP_RNA",pal=c13_match,colorBy = "cellColData",size = 0.8, labelAsFactors=F, labelMeans=F)
+p3 <- plotEmbedding(archrproj, name = "celltype", embedding = "IterativeLSI",pal=c13_match,colorBy = "cellColData",size = 0.8, labelAsFactors=F, labelMeans=F)
+plotPDF(p1, p2, p3, name = "6.30_UMAP-scATAC-scRNA-Harmony_celltype", addDOC = FALSE)
+#callpeak
+archrproj <- addGroupCoverages(ArchRProj = proj, groupBy = "celltype",force = TRUE)
+pathToMacs2 <- "/home/wangrong/.local/bin/macs2"
+archrproj <- addReproduciblePeakSet(ArchRProj = archrproj,groupBy = "celltype",pathToMacs2 = pathToMacs2)
+archrproj <- addPeakMatrix(archrproj)
+saveRDS(archrproj,"/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/6.14.Archr_call_peak.RDS",compress = F)
+
+```
+##  Differential gene expression and differential peak accessibility. 
+```{r DEG, eval=FALSE}
+##finding and Visualizing Marker Genes on an Embedding
+markersGE <- getMarkerFeatures(ArchRProj = archrproj, useMatrix = "GeneExpressionMatrix", groupBy = "celltype",testMethod = "wilcoxon")
+markerList <- getMarkers(markersGE, cutOff = "FDR <= 0.01 & Log2FC >= 1.25")
+pbmc.marker <- read_excel("/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/hsPBMC_markers_v3--wangrong.xlsx")
+heatmapGE <- markerHeatmap(seMarker = markersGE, cutOff = "FDR <= 0.01 & Log2FC >= 1.25", labelMarkers = unique(pbmc.marker$Gene,transpose = TRUE))
+ComplexHeatmap::draw(heatmapGE, heatmap_legend_side = "bot", annotation_legend_side = "bot")
+plotPDF(heatmapGE, name = "6.14_Expression-Marker-Heatmap", width = 8, height = 10, ArchRProj = archrproj, addDOC = TRUE)
+
+markersPeaks <- getMarkerFeatures(ArchRProj = archrproj, useMatrix = "PeakMatrix", groupBy = "celltype",bias = c("TSSEnrichment", "log10(nFrags)"),testMethod = "wilcoxon")
+markerList_peak <- getMarkers(markersPeaks, cutOff = "FDR <= 0.01 & Log2FC >= 1", returnGR = TRUE)
+heatmapPeaks <- markerHeatmap(seMarker = markersPeaks, cutOff = "FDR <= 0.1 & Log2FC >= 0.5",transpose = TRUE)
+plotPDF(heatmapPeaks, name = "6.14_Peak-Marker-Heatmap", width = 8, height = 10, ArchRProj = archrproj, addDOC = TRUE)
+
+##Motif and Feature Enrichment 
+motif_archr<- addMotifAnnotations(ArchRProj = archrproj, motifSet = "cisbp", name = "Motif",force = TRUE)
+enrichMotifs <- peakAnnoEnrichment(seMarker = markersPeaks,ArchRProj = motif_archr,peakAnnotation = "Motif",cutOff = "FDR <= 0.1 & Log2FC >= 0.5")
+heatmapEM <- plotEnrichHeatmap(enrichMotifs, n = 7, transpose = TRUE)
+ComplexHeatmap::draw(heatmapEM, heatmap_legend_side = "bot", annotation_legend_side = "bot")
+plotPDF(heatmapEM, name = "6.14_Motifs-Enriched-Marker-Heatmap", width = 8, height = 6, ArchRProj = motif_archr, addDOC = FALSE)
+##ChromVAR Deviatons Enrichment 
+motif_archr <- addBgdPeaks(motif_archr)
+motif_archr <- addDeviationsMatrix(ArchRProj = motif_archr, peakAnnotation = "Motif",force = TRUE)
+plotVarDev <- getVarDeviations(motif_archr, name = "MotifMatrix", plot = TRUE)
+plotVarDev
+plotPDF(plotVarDev, name = "Variable-Motif-Deviation-Scores", width = 5, height = 5, ArchRProj = motif_archr, addDOC = FALSE)
+```
+
+
+##  Comparing immune cell proportion
+For each time point in each participant, cell type proportions were calculated by dividing the number of cells in a particular cell type by the total number of cells in a single participant. To determine the changes in the proportions of different antibody levels and cells, we also plotted a line graph of the changes in antibody levels. Cell type abundance counts were modeled as a function of either timepoints (as an ordinal variable: (Day0>Day1>Day3>Day6>Day14>Day30>Day31>Day33>Day36>Day44), in a negative binomial generalized linear model (NB GLM), implemented in the Bioconductor package edgeR. Counts were normalized in the model using the (log) of the total numbers of all cells captured for each donor. We performed hypothesis testing using a quasi-likelihood F-test, comparing post-vaccination time-points with day 0 controls to identify linear trends across vaccination time points. (Day0>Day1>Day3>Day6>Day14>Day30>Day31>Day33>Day36>Day44). Differentially abundant cell types were determined using a 10% FDR.
+```{r cellratio, eval=FALSE}
+rename_pbmc<-readRDS("/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/5.19.peak_to_gene.RDS")
+pro <- table(rename_pbmc$annotation,rename_pbmc$Timepoints)
+pro_ra <- prop.table(pro_1,1)
+pro_2 <- as.data.frame(pro_ra)
+pro_2$Var2 <- factor(pro_2$Var2,levels=c("Day0","Day1","Day3","Day6","Day14","Day30","Day31","Day33","Day36","Day44","Day171","Day185"))
+pro_2$Var3 <- factor(pro_2$Var3,levels=c("Naïve B"," Intermediate B","Plasmablasts/Memory B","Naïve CD4+ T cells","CD4+ Tcm","Treg","Naïve CD8+ T cells","CD8+ Tem","MAIT","NK/NKT" ,"CD14+ Mono","CD16+ Mono","Plasmacytoid DC"))
+b6<-brewer.pal(12,"Paired")
+b7<-brewer.pal(8,"Set2")
+c<-c(b6[c(1,2,3,4,5,7,8,9,10,11,12)],b7)
+ggplot(pro_2,aes(x=Var2,y=ratio,colour=Var1,group=Var1,fill=Var1,shape=Var2)) +
+  facet_wrap(Var3~.,scale="free_y")+
+  scale_shape_manual(values = c(20,20,20,20,20,20,20,20,20,20))+
+  geom_line(size =0.8)+
+  geom_point(size=3)+
+  theme(axis.line = element_line(colour = "black"))+
+  labs( x = 'Cell types', y = 'Cell proportion')+
+  scale_color_manual(values = b7)+
+  theme_bw()+
+  theme(axis.title = element_text(size=20),panel.grid=element_blank())+
+  theme(axis.text.x = element_text(angle = 45,size = rel(1.2)))+
+  theme(axis.text.y= element_text(size = rel(1.2)))
+abundances <- unclass(pro) 
+class(abundances)
+y.ab <- DGEList(counts=abundances, samples=extra.info)
+
+```
+
+##  Analysis of gene sharing across cell types
+To accommodate for time and individual diversity in our dataset, we developed a new method for analyzing co-expressed genes, based on the concept of hierarchical clustering. 
+We divide the large matrix into smaller chunks to save it as a CSV file.
+```{r matraix,eval=FALSE}
+library(log4r)
+library(Seurat)
+library(data.table)
+
+## We divide the large matrix into smaller chunks to save it as a CSV file.
+write_sparse_csv <- function(x, file, ..., chunk = 1000){
+  passes <- ncol(x) %/% chunk
+  remaining <- ncol(x) %% chunk
+  if(passes > 0){
+    idx <- seq_len(chunk)
+    y <- x[ , idx, drop = FALSE]
+    y <- as.matrix(y)
+    passes <- passes - 1L
+    for(i in seq_len(passes)){
+      idx <- idx + chunk
+      tmp <- x[ , idx, drop = FALSE]
+      tmp <- as.matrix(tmp)
+      y <- data.frame(y, tmp)
+    }
+    if(remaining > 0){
+      p <- idx[chunk] + 1
+      q <- idx[chunk] + remaining
+      tmp <- x[ , p:q, drop = FALSE]
+      tmp <- as.matrix(tmp)
+      y <- data.frame(y, tmp)
+      y <- t(y)
+      y <- as.data.frame(y)
+      fwrite(y, file, sep = ",", col.names = TRUE, row.names = TRUE)
+    }
+  } 
+}
+
+## extract the necessary data from the RDS file, including:
+## 1. gene expression data
+## 2. samples metadata
+rnaData <- readRDS('/database/findCoexpressionGenes/data/5.18.annotation.signac.RDS')
+geneExpression <- rnaData@assays$RNA
+geneExpression <- geneExpression@data
+metadata <- rnaData@meta.data
+## delete the variable, free up memory.
+rm(rnaData)
+gc()
+
+## create a log to record the outputs
+path = 'database/findCoexpressionGenes/logs/01_dataPreprocess.txt'
+create.logger(path, level = 2) 
+appender = file_appender(path)
+
+## save data as CSV files
+appender(level = 'INFO', 'Start saving geneExpression.csv.')
+write_sparse_csv(geneExpression, '/database/findCoexpressionGenes/outputs/geneExpression.csv')
+appender(level = 'INFO', 'geneExpression.csv was saved.')
+
+appender(level = 'INFO', 'Start saving metaData.csv.')
+write.csv(metadata, '/database/findCoexpressionGenes/outputs/metaData.csv')
+appender(level = 'INFO', 'metaData.csv was saved.')
+
+rm(geneExpression, metadata)
+gc()
+
+## merge data by barcode information
+appender(level = 'INFO', 'Start merging data.')
+data <- fread('/database/findCoexpressionGenes/outputs/geneExpression.csv')
+meta <- fread('/database/findCoexpressionGenes/outputs/metaData.csv')
+meta$V1 <- gsub("-","\\.",meta$V1)
+all <- merge.data.table(meta, data, by = 'V1')
+fwrite(all, '/database/findCoexpressionGenes/outputs/all.csv', col.names = TRUE)
+appender(level = 'INFO', 'Merged-data was saved!.')
+
+```
+In the first step, we calculated the average expression of genes at each time point in different types of cells under different individuals as the smallest unit for co-expression analysis.
+```{r average_expression,eval=FALSE}
+library(data.table)
+
+people <- c('P1', 'P2', 'P3', 'P4')
+# celltypes <- c('Naïve CD4+ T cells', 'Naïve CD8+ T cells', 'NK/NKT', 'Memory B', 'Naïve B',
+#                'Intermediate B', 'CD14+ Mono', 'CD16+ Mono', 'CD4+ Tcm', 'Plasmacytoid DC', 'Treg', 
+#                'CD8+ Tem', 'MAIT')
+
+print('Loading all.csv file.')
+t1 <- proc.time()
+data <- fread('/database/huhuajie/findCoexpressionGenes/finalResults/all.csv')
+t2 <- proc.time()
+t <- t2 - t1
+print(paste0('Down! Time taken: ', t[3][[1]] / 60, ' mins'))
+for (person in people){
+  print(paste0('Start processing ', person))
+  t3 <- proc.time()
+  persondata <- data[Participants == person]
+  # for (type in celltypes){
+  type <- 'Eryth/Platelet CD14+ Mono new'
+  print(paste0('Start processing ', type, ' of ', person))
+  t4 <- proc.time()
+  df <- persondata[celltype %chin% c('Eryth/Platelet','CD14+ Mono'), 
+            !c("V1", "orig.ident", "nCount_RNA", "nFeature_RNA", "percent.mt", "RNA_snn_res.0.3", "seurat_clusters",
+                "Dlabel", "nCount_ATAC", "nFeature_ATAC", "nucleosome_signal", "Participants",
+                "nucleosome_percentile", "TSS.enrichment", "TSS.percentile", "n200", "n200_k33", "annotation", "celltype")]
+  df <- df[, lapply(.SD, mean, na.rm = TRUE), by = Timepoints]
+  for (i in 1:nrow(df)){
+    if (df[, 1][i] == 'Day0'){
+      df[, 1][i] = 0
+    }else if (df[, 1][i] == 'Day1'){
+      df[, 1][i] = 1
+    }else if (df[, 1][i] == 'Day3'){
+      df[, 1][i] = 3
+    }else if (df[, 1][i] == 'Day6'){
+      df[, 1][i] = 6
+    }else if (df[, 1][i] == 'Day14'){
+      df[, 1][i] = 14
+    }else if (df[, 1][i] == 'Day30'){
+      df[, 1][i] = 30
+    }else if (df[, 1][i] == 'Day31'){
+      df[, 1][i] = 31
+    }else if (df[, 1][i] == 'Day33'){
+      df[, 1][i] = 33
+    }else if (df[, 1][i] == 'Day36'){
+      df[, 1][i] = 36
+    }else if (df[, 1][i] == 'Day44'){
+      df[, 1][i] = 44
+    }else if (df[, 1][i] == 'Day171'){
+      df[, 1][i] = 171
+    }else if (df[, 1][i] == 'Day185'){
+      df[, 1][i] = 185
+    }
+  }
+  df$Timepoints <- as.numeric(df$Timepoints)
+  df <- df[order(df$Timepoints)]
+  type <- gsub(' ','_',type)
+  type <- gsub('/', '_', type)
+  path <- paste0('/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/byPeople/',person,'_',type,'.csv')
+  fwrite(df, path)
+  t5 <- proc.time()
+  t <- t5 - t4
+  print(paste0(type, ' of ', person, ' was down! Time taken: ',  t[3][[1]] / 60, ' mins'))
+# }
+  t6 <- proc.time()
+  t <- t6 - t3
+  print(paste0(person, ' was down! Time taken: ',  t[3][[1]] / 60, ' mins'))
+}
+
+t7 <- proc.time()
+t <- t7 - t1
+print(paste0('All time spend: ',  t[3][[1]] / 60, ' mins'))
+
+```
+In the second step, we performed feature engineering. Since we were interested in the change trends of gene expression, we first calculated the slope between gene expression at two neighboring time points, which was used to depict changes on a partial level.
+```{r slope,eval=FALSE}
+# 计算斜率数据，包括跨一个点的斜率
+
+library(data.table)
+
+# celltypes <- c('Naïve CD4+ T cells', 'Naïve CD8+ T cells', 'NK/NKT', 'Plasmablasts/Memrary B', 'Naïve B',
+#                  'Intermediate B', 'CD14+ Mono', 'CD16+ Mono', 'CD4+ Tcm', 'Plasmacytoid DC', 'Treg', 
+#                  'CD8+ Tem', 'MAIT')
+
+print('Loading all.csv file.')
+t1 <- proc.time()
+data <- fread('/database/huhuajie/findCoexpressionGenes/finalResults/all.csv')
+t2 <- proc.time()
+t <- t2 - t1
+print(paste0('Down! Time taken: ', t[3][[1]] / 60, ' mins'))
+
+# for (type in celltypes){
+type <- 'Eryth/Platelet CD14+ Mono new'
+print(paste0('Start processing ', type))
+t3 <- proc.time()
+
+# 选取特定类型(type)的细胞，删除不需要的列
+df <- data[celltype %chin% c('Eryth/Platelet', 'CD14+ Mono'), 
+                 !c("V1", "orig.ident", "nCount_RNA", "nFeature_RNA", "percent.mt", "RNA_snn_res.0.3", "seurat_clusters",
+                    "Dlabel", "nCount_ATAC", "nFeature_ATAC", "nucleosome_signal", 
+                    "nucleosome_percentile", "TSS.enrichment", "TSS.percentile", "n200", "n200_k33", "annotation", "celltype")]
+df1 <- df[Participants %chin% c('P1', 'P3', 'P4')]
+
+# 对于P2，剔除数据质量差的Day1、Day3、Day171、Day185四个时间点的数据
+df2 <- subset(df, Participants == 'P2' & Timepoints %chin% c('Day0', 'Day6','Day14','Day30','Day31','Day33','Day36','Day44'))
+df <- rbind(df1, df2)
+df <- df[, !c('Participants')]
+
+# 求该细胞类型所有基因不同时间点的平均表达量
+df <- df[, lapply(.SD, mean, na.rm = TRUE), by = Timepoints]
+
+# 按时间点升序排列
+for (i in 1:nrow(df)){
+  if (df[, 1][i] == 'Day0'){
+    df[, 1][i] = 0
+  }else if (df[, 1][i] == 'Day1'){
+    df[, 1][i] = 1
+  }else if (df[, 1][i] == 'Day3'){
+    df[, 1][i] = 3
+  }else if (df[, 1][i] == 'Day6'){
+    df[, 1][i] = 6
+  }else if (df[, 1][i] == 'Day14'){
+    df[, 1][i] = 14
+  }else if (df[, 1][i] == 'Day30'){
+    df[, 1][i] = 30
+  }else if (df[, 1][i] == 'Day31'){
+    df[, 1][i] = 31
+  }else if (df[, 1][i] == 'Day33'){
+    df[, 1][i] = 33
+  }else if (df[, 1][i] == 'Day36'){
+    df[, 1][i] = 36
+  }else if (df[, 1][i] == 'Day44'){
+    df[, 1][i] = 44
+  }
+}
+df$Timepoints <- as.numeric(df$Timepoints)
+df <- df[order(df$Timepoints),]
+
+# 保存该细胞类型所有基因不同时间点的平均表达量为csv文件
+type <- gsub(' ','_',type)
+type <- gsub('/', '_', type)
+path <- paste0('/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/gex_',type,'.csv')
+fwrite(df, path)
+
+# 计算斜率，slope_NED存放不等距斜率，slope_ED存放等距斜率
+x <- df$Timepoints
+num <- 1
+genes <- colnames(df)
+slope_NED <- data.table()
+slope_ED <- data.table()
+for (i in 2:length(genes)){
+  y <- df[[i]]
+  
+  # 非跨点斜率，包含翻转
+  for (j in 1:(length(y)-1)){
+    tmp1 <- (y[j+1] - y[j]) / (x[j+1] - x[j])
+    if (j == 1){
+      slope1 <- tmp1
+      slope1_flip <- -tmp1
+    }else{
+      slope1 <- c(slope1, tmp1)
+      slope1_flip <- c(slope1_flip, -tmp1)
+    }
+    
+    tmp2 <- (y[j+1] - y[j])
+    if (j == 1){
+      slope2 <- tmp2
+      slope2_flip <- -tmp2
+    }else{
+      slope2 <- c(slope2, tmp2)
+      slope2_flip <- c(slope2_flip, -tmp2)
+    }
+  }
+  
+  # 跨一个点的斜率，包括翻转
+  for (j in 1:(length(y)-2)){
+    tmp1 <- (y[j+2] - y[j]) / (x[j+2] - x[j])
+    slope1 <- c(slope1, tmp1)
+    slope1_flip <- c(slope1_flip, -tmp1)
+    
+    tmp2 <- (y[j+2] - y[j])
+    slope2 <- c(slope2, tmp2)
+    slope2_flip <- c(slope2_flip, -tmp2)
+  }
+  
+  slope_NED[, genes[i]:= slope1]
+  slope_NED[, paste0(genes[i],'_flip'):= slope1_flip]
+  slope_ED[, genes[i]:= slope2]
+  slope_ED[, paste0(genes[i],'_flip'):= slope2_flip]
+  if (num %% 2000 == 0 | num == length(genes)){
+    print(num)
+  }
+  num <- num + 1
+}
+
+path1 <- paste0('/database/huhuajie/findCoexpressionGenes/finalResults/getSlope/','Slope_',type,'_ED.csv')
+path2 <- paste0('/database/huhuajie/findCoexpressionGenes/finalResults/getSlope/','Slope_',type,'_NED.csv')
+fwrite(slope_ED, path1)
+fwrite(slope_NED, path2)
+t4 <- proc.time()
+t <- t4 - t3
+print(paste0(type, ' was down! Time taken: ',  t[3][[1]] / 60, ' mins'))
+rm(df, df1, df2, slope_ED, slope_NED, path1, path2)
+gc()
+# }
+
+t5 <- proc.time()
+t <- t5 - t1
+print(paste0('All time spend: ',  t[3][[1]] / 60, ' mins'))
+
+```
+Next, we calculated the slope between two time points with a time interval of one point to ensure that the overall trends were similar. Additionally, considering that gene expression can be either up-regulated or down-regulated, we included the opposite numbers corresponding to each slope in the analysis. 
+```{r cv,eval=FALSE}
+# 计算差异系数(coefficient of variation)
+
+library(data.table)
+
+# celltypes <- c('Naïve CD4+ T cells', 'Naïve CD8+ T cells', 'NK/NKT', 'Plasmablasts/Memrary B', 'Naïve B',
+#                'Intermediate B', 'CD14+ Mono', 'CD16+ Mono', 'CD4+ Tcm', 'Plasmacytoid DC', 'Treg', 
+#                 'CD8+ Tem', 'MAIT')
+
+print('Loading all.csv file.')
+t1 <- proc.time()
+data <- fread('/database/huhuajie/findCoexpressionGenes/finalResults/all.csv')
+t2 <- proc.time()
+t <- t2 - t1
+print(paste0('Down! Time taken: ', t[3][[1]] / 60, ' mins'))
+
+# for (type in celltypes){
+type <- 'Eryth/Platelet CD14+ Mono new'
+print(paste0('Start processing ', type))
+t3 <- proc.time()
+
+# 选取特定类型(type)的细胞，删除不需要的列
+df <- data[celltype %chin% c('Eryth/Platelet','CD14+ Mono'), 
+           !c("V1", "orig.ident", "nCount_RNA", "nFeature_RNA", "percent.mt", "RNA_snn_res.0.3", "seurat_clusters",
+              "Dlabel", "nCount_ATAC", "nFeature_ATAC", "nucleosome_signal", 
+              "nucleosome_percentile", "TSS.enrichment", "TSS.percentile", "n200", "n200_k33", "annotation", "celltype")]
+df1 <- df[Participants %chin% c('P1', 'P3', 'P4')]
+
+# 对于P2，剔除数据质量差的Day1、Day3、Day171、Day185四个时间点的数据
+df2 <- subset(df, Participants == 'P2' & Timepoints %chin% c('Day0', 'Day6','Day14','Day30','Day31','Day33','Day36','Day44'))
+df <- rbind(df1, df2)
+df <- df[, !c('Participants')]
+
+# 求该细胞类型所有基因不同时间点的平均表达量及表达量标准差
+meandf <- df[, lapply(.SD, mean, na.rm = TRUE), by = Timepoints]
+sddf <- df[, lapply(.SD, sd, na.rm = TRUE), by = Timepoints]
+
+# 按时间点升序排列
+for (i in 1:nrow(meandf)){
+  if (meandf[, 1][i] == 'Day0'){
+    meandf[, 1][i] = 0
+  }else if (meandf[, 1][i] == 'Day1'){
+    meandf[, 1][i] = 1
+  }else if (meandf[, 1][i] == 'Day3'){
+    meandf[, 1][i] = 3
+  }else if (meandf[, 1][i] == 'Day6'){
+    meandf[, 1][i] = 6
+  }else if (meandf[, 1][i] == 'Day14'){
+    meandf[, 1][i] = 14
+  }else if (meandf[, 1][i] == 'Day30'){
+    meandf[, 1][i] = 30
+  }else if (meandf[, 1][i] == 'Day31'){
+    meandf[, 1][i] = 31
+  }else if (meandf[, 1][i] == 'Day33'){
+    meandf[, 1][i] = 33
+  }else if (meandf[, 1][i] == 'Day36'){
+    meandf[, 1][i] = 36
+  }else if (meandf[, 1][i] == 'Day44'){
+    meandf[, 1][i] = 44
+  }
+}
+meandf$Timepoints <- as.numeric(meandf$Timepoints)
+meandf <- meandf[order(meandf$Timepoints)]
+
+for (i in 1:nrow(sddf)){
+  if (sddf[, 1][i] == 'Day0'){
+    sddf[, 1][i] = 0
+  }else if (sddf[, 1][i] == 'Day1'){
+    sddf[, 1][i] = 1
+  }else if (sddf[, 1][i] == 'Day3'){
+    sddf[, 1][i] = 3
+  }else if (sddf[, 1][i] == 'Day6'){
+    sddf[, 1][i] = 6
+  }else if (sddf[, 1][i] == 'Day14'){
+    sddf[, 1][i] = 14
+  }else if (sddf[, 1][i] == 'Day30'){
+    sddf[, 1][i] = 30
+  }else if (sddf[, 1][i] == 'Day31'){
+    sddf[, 1][i] = 31
+  }else if (sddf[, 1][i] == 'Day33'){
+    sddf[, 1][i] = 33
+  }else if (sddf[, 1][i] == 'Day36'){
+    sddf[, 1][i] = 36
+  }else if (sddf[, 1][i] == 'Day44'){
+    sddf[, 1][i] = 44
+  }
+}
+sddf$Timepoints <- as.numeric(sddf$Timepoints)
+sddf <- sddf[order(sddf$Timepoints)]
+
+# 计算CV，CV保存原始差异系数值，CV_ED存放CV变化的等距斜率，CV_NED存放CV变化的不等距斜率
+x <- meandf[, .(Timepoints)]
+x <- as.numeric(unlist(x))
+num <- 1
+genes <- colnames(meandf)
+CV <- data.table()
+CV_ED <- data.table()
+CV_NED <- data.table()
+for (i in 2:length(genes)){
+  mean <- meandf[[i]]
+  mean <- as.numeric(unlist(mean))
+  sd <- sddf[[i]]
+  sd <- as.numeric(unlist(sd))
+  for (j in 1:(length(mean)-1)){
+    if (mean[j+1] == 0 | mean[j] == 0){
+      tmp1 <- 0
+    }
+    else{
+      tmp1 <- (sd[j+1]/mean[j+1] - sd[j]/mean[j]) / (x[j+1] - x[j])
+    }
+    if (j == 1){
+      slope1 <- tmp1
+    }else{
+      slope1 <- c(slope1, tmp1)
+    }
+    if (mean[j+1] == 0 | mean[j] == 0){
+      tmp2 <- 0
+    }
+    else{
+      tmp2 <- (sd[j+1]/mean[j+1] - sd[j]/mean[j])
+    }
+    if (j == 1){
+      slope2 <- tmp2
+    }else{
+      slope2 <- c(slope2, tmp2)
+    }
+  }
+  CV_NED[, genes[i]:= slope1]
+  CV_ED[, genes[i]:= slope2]
+  
+  for (k in 1:length(mean)){
+    if (mean[k] == 0){
+      tmp3 <- 0
+    }
+    else{
+      tmp3 <- sd[k] / mean[k]
+    }
+    if (k == 1){
+      slope3 <- tmp3
+    }else{
+      slope3 <- c(slope3, tmp3)
+    }
+  }
+  CV[, genes[i]:= slope3]
+  
+  if (num %% 2000 == 0 | num == length(genes)){
+    print(num)
+  }
+  num <- num + 1
+}
+type <- gsub(' ','_',type)
+type <- gsub('/', '_', type)
+path1 <- paste0('/database/huhuajie/findCoexpressionGenes/finalResults/getCV/','CV_',type,'_ED.csv')
+path2 <- paste0('/database/huhuajie/findCoexpressionGenes/finalResults/getCV/','CV_',type,'_NED.csv')
+path3 <- paste0('/database/huhuajie/findCoexpressionGenes/finalResults/getCV/','CV_',type,'.csv')
+fwrite(CV_ED, path1)
+fwrite(CV_NED, path2)
+fwrite(CV, path3)
+t4 <- proc.time()
+t <- t4 - t3
+print(paste0(type, ' was down! Time taken: ',  t[3][[1]] / 60, ' mins'))
+rm(df, meandf, sddf, CV_ED, CV_NED, CV, path1, path2, path3)
+gc()
+# }
+
+
+t5 <- proc.time()
+t <- t5 - t1
+print(paste0('All time spend: ',  t[3][[1]] / 60, ' mins'))
+
+```
+ Finally, considering the heterogeneity of cells, we calculated the zero-value ratios, which represented the proportion of cells with a detection value of zero for a given gene.
+```{r zero-value,eval=FALSE}
+# 计算零值百分比
+
+library(data.table)
+
+celltypes <- c('Naïve CD4+ T cells', 'Naïve CD8+ T cells', 'NK/NKT', 'Plasmablasts/Memrary B', 'Naïve B',
+               'Intermediate B', 'CD14+ Mono', 'CD16+ Mono', 'CD4+ Tcm', 'Plasmacytoid DC', 'Treg', 
+               'CD8+ Tem', 'Eryth/Platelet', 'MAIT')
+
+
+# 计算一组值的零值百分比，table函数统计每个值出现的频次
+getZero <- function(x){
+  if (names(table(x))[1] == '0'){
+    nums_zero <- table(x)[['0']]
+    nums_all <- length(x)
+    res <- 1 - (nums_zero / nums_all)
+  }else{
+    res <- 0
+  }
+  return(res)
+}
+
+print('Loading all.csv file.')
+t1 <- proc.time()
+data <- fread('/database/huhuajie/findCoexpressionGenes/finalResults/all.csv')
+t2 <- proc.time()
+t <- t2 - t1
+print(paste0('Down! Time taken: ', t[3][[1]] / 60, ' mins'))
+
+for (type in celltypes){
+  type <- 'Eryth/Platelet CD14+ Mono new'
+  print(paste0('Start processing ', type))
+  t3 <- proc.time()
+
+  # 选取特定类型(type)的细胞，删除不需要的列
+  df <- data[celltype %chin% c('Eryth/Platelet','CD14+ Mono'), 
+            !c("V1", "orig.ident", "nCount_RNA", "nFeature_RNA", "percent.mt", "RNA_snn_res.0.3", "seurat_clusters",
+                "Dlabel", "nCount_ATAC", "nFeature_ATAC", "nucleosome_signal", 
+                "nucleosome_percentile", "TSS.enrichment", "TSS.percentile", "n200", "n200_k33", "annotation", "celltype")]
+  df1 <- df[Participants %chin% c('P1', 'P3', 'P4')]
+
+  # 对于P2，剔除数据质量差的Day1、Day3、Day171、Day185四个时间点的数据
+  df2 <- subset(df, Participants == 'P2' & Timepoints %chin% c('Day0', 'Day6','Day14','Day30','Day31','Day33','Day36','Day44'))
+  df <- rbind(df1, df2)
+  df <- df[, !c('Participants')]
+
+  # 求该细胞类型所有基因不同时间点的零值百分比
+  zerodf <- df[, lapply(.SD, getZero), by = Timepoints]
+
+  # 按时间点升序排列 
+  for (i in 1:nrow(zerodf)){
+    if (zerodf[, 1][i] == 'Day0'){
+      zerodf[, 1][i] = 0
+    }else if (zerodf[, 1][i] == 'Day1'){
+      zerodf[, 1][i] = 1
+    }else if (zerodf[, 1][i] == 'Day3'){
+      zerodf[, 1][i] = 3
+    }else if (zerodf[, 1][i] == 'Day6'){
+      zerodf[, 1][i] = 6
+    }else if (zerodf[, 1][i] == 'Day14'){
+      zerodf[, 1][i] = 14
+    }else if (zerodf[, 1][i] == 'Day30'){
+      zerodf[, 1][i] = 30
+    }else if (zerodf[, 1][i] == 'Day31'){
+      zerodf[, 1][i] = 31
+    }else if (zerodf[, 1][i] == 'Day33'){
+      zerodf[, 1][i] = 33
+    }else if (zerodf[, 1][i] == 'Day36'){
+      zerodf[, 1][i] = 36
+    }else if (zerodf[, 1][i] == 'Day44'){
+      zerodf[, 1][i] = 44
+    }
+  }
+  zerodf$Timepoints <- as.numeric(zerodf$Timepoints)
+  zerodf <- zerodf[order(zerodf$Timepoints)]
+
+  # 计算零值百分比，
+  # zeroPT保存原始零值百分比值，zeroPT_ED存放零值百分比变化的等距斜率，zeroPT_NED存放零值百分比变化的不等距斜率  
+  x <- zerodf[, .(Timepoints)]
+  x <- as.numeric(unlist(x))
+  num <- 1
+  genes <- colnames(zerodf)
+  zeroPT <- data.table()
+  zeroPT_ED <- data.table()
+  zeroPT_NED <- data.table()
+
+  for (i in 2:length(genes)){
+    zero <- zerodf[[i]]
+    zero <- as.numeric(unlist(zero))
+    zeroPT[, genes[i]:= zero]
+
+    for (j in 1:(length(zero)-1)){
+
+      tmp1 <- (zero[j+1] - zero[j]) / (x[j+1] - x[j])
+      if (j == 1){
+        zero1 <- tmp1
+      }else{
+        zero1 <- c(zero1, tmp1)
+      }
+
+      tmp2 <- (zero[j+1] - zero[j])
+      if (j == 1){
+        zero2 <- tmp2
+      }else{
+        zero2 <- c(zero2, tmp2)
+      }
+    }
+    zeroPT_NED[, genes[i]:= zero1]
+    zeroPT_ED[, genes[i]:= zero2]
+
+    if (num %% 2000 == 0 | num == length(genes)){
+      print(num)
+    }
+    num <- num + 1
+  }
+  type <- gsub(' ','_',type)
+  type <- gsub('/', '_', type)
+  path1 <- paste0('/database/huhuajie/findCoexpressionGenes/finalResults/getZero/','ZeroPT_',type,'_ED.csv')
+  path2 <- paste0('/database/huhuajie/findCoexpressionGenes/finalResults/getZero/','ZeroPT_',type,'_NED.csv')
+  path3 <- paste0('/database/huhuajie/findCoexpressionGenes/finalResults/getZero/','ZeroPT_',type,'.csv')
+  fwrite(zeroPT_ED, path1)
+  fwrite(zeroPT_NED, path2)
+  fwrite(zeroPT, path3)
+  t4 <- proc.time()
+  t <- t4 - t3
+  print(paste0(type, ' was down! Time taken: ',  t[3][[1]] / 60, ' mins'))
+  rm(df, zerodf, zeroPT_ED, zeroPT_NED, zeroPT, path1, path2, path3)
+  # rm(df, zerodf, zeroPT, path3)
+  gc()
+}
+  
+t5 <- proc.time()
+t <- t5 - t1
+print(paste0('All time spend: ',  t[3][[1]] / 60, ' mins'))
+
+```
+ In the final step, we first excluded genes whose expression level is 0 and were expressed at only 1 time point, and then we performed clustering layer-by-layer. 
+```{python clustering,eval=FALSE}
+import os
+import gc
+import time
+import numpy as np
+import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import warnings
+from sklearn import metrics
+from sklearn.cluster import MeanShift
+from sklearn.decomposition import PCA
+from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import Normalizer
+from kneed import KneeLocator
+
+warnings.filterwarnings('ignore')
+annotations = ['Eryth/Platelet CD14+ Mono new']
+# annotations = ['Naïve CD4+ T cells', 'Naïve CD8+ T cells', 'NK/NKT', 'Plasmablasts/Memrary B', 'Naïve B',
+#                'Intermediate B', 'CD14+ Mono', 'CD16+ Mono', 'CD4+ Tcm', 'Plasmacytoid DC', 'Treg', 
+#                 'CD8+ Tem', 'MAIT']
+ 
+for celltype in annotations:
+    startTime = time.time()
+    print('Start processing {}.'.format(celltype))
+    
+    celltype = celltype.replace(' ', '_')
+    celltype = celltype.replace('/', '_')
+    # os.makedirs('/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/'.format(celltype))
+
+    slope = pd.read_csv('/database/huhuajie/findCoexpressionGenes/finalResults/getSlope/Slope_{}_ED.csv'.format(celltype))
+    zero = pd.read_csv('/database/huhuajie/findCoexpressionGenes/finalResults/getZero/ZeroPT_{}_ED.csv'.format(celltype))
+    zero = zero.fillna(0)
+    zero_newcol = {}
+    for i in range(len(zero.columns)):
+        y = zero.iloc[:, i]
+        newcol = zero.columns[i] + '_flip'
+        zero_newcol[newcol] = y
+    zero_newcol_df = pd.DataFrame(zero_newcol)
+    zero = pd.concat([zero, zero_newcol_df], axis=1)
+    # cv = pd.read_csv('/database/huhuajie/findCoexpressionGenes/finalResults/getCV/all_{}_NED.csv'.format(celltype))
+    # cv = cv.fillna(0)
+    # cv_newcol = {}
+    # for i in range(len(cv.columns)):
+    #     y = cv.iloc[:, i]
+    #     y = -y
+    #     newcol = cv.columns[i] + '_flip'
+    #     cv_newcol[newcol] = y
+    # cv_newcol_df = pd.DataFrame(cv_newcol)
+    # cv = pd.concat([cv, cv_newcol_df], axis=1)
+        
+    gex1 = pd.read_csv('/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/byPeople/P1_{}.csv'.format(celltype))
+    gex1 = gex1.fillna(0)
+    gex1_newcol = {}
+    for i in range(1,len(gex1.columns)):
+        y = gex1.iloc[:,i]
+        ymax = max(y)
+        ymin = min(y)
+        yflip = (ymax + ymin) - y
+        newcol = gex1.columns[i] + '_flip'
+        gex1_newcol[newcol] = yflip
+    gex1_newcol_df = pd.DataFrame(gex1_newcol)
+    gex1 = pd.concat([gex1, gex1_newcol_df], axis=1)
+    
+    gex2 = pd.read_csv('/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/byPeople/P2_{}.csv'.format(celltype))
+    gex2 = gex2.fillna(0)
+    gex2_newcol = {}
+    for i in range(1,len(gex2.columns)):
+        y = gex2.iloc[:,i]
+        ymax = max(y)
+        ymin = min(y)
+        yflip = (ymax + ymin) - y
+        newcol = gex2.columns[i] + '_flip'
+        gex2_newcol[newcol] = yflip
+    gex2_newcol_df = pd.DataFrame(gex2_newcol)
+    gex2 = pd.concat([gex2, gex2_newcol_df], axis=1)
+    
+    gex3 = pd.read_csv('/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/byPeople/P3_{}.csv'.format(celltype))
+    gex3 = gex3.fillna(0)
+    gex3_newcol = {}
+    for i in range(1,len(gex3.columns)):
+        y = gex3.iloc[:,i]
+        ymax = max(y)
+        ymin = min(y)
+        yflip = (ymax + ymin) - y
+        newcol = gex3.columns[i] + '_flip'
+        gex3_newcol[newcol] = yflip
+    gex3_newcol_df = pd.DataFrame(gex3_newcol)
+    gex3 = pd.concat([gex3, gex3_newcol_df], axis=1)
+    
+    gex4 = pd.read_csv('/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/byPeople/P4_{}.csv'.format(celltype))
+    gex4 = gex4.fillna(0)
+    gex4_newcol = {}
+    for i in range(1,len(gex4.columns)):
+        y = gex4.iloc[:,i]
+        ymax = max(y)
+        ymin = min(y)
+        yflip = (ymax + ymin) - y
+        newcol = gex4.columns[i] + '_flip'
+        gex4_newcol[newcol] = yflip
+    gex4_newcol_df = pd.DataFrame(gex4_newcol)
+    gex4 = pd.concat([gex4, gex4_newcol_df], axis=1)
+
+    geneNames = gex1.columns[1:]
+    delete_list = []
+    for i in geneNames:
+        if sum(gex1[i]) == 0 or sum(gex2[i]) == 0 or sum(gex3[i]) == 0 or sum(gex4[i]) == 0:
+            delete_list.append(i)
+    gex1 = gex1.drop(delete_list, axis=1)    
+    gex2 = gex2.drop(delete_list, axis=1) 
+    gex3 = gex3.drop(delete_list, axis=1) 
+    gex4 = gex4.drop(delete_list, axis=1) 
+    slope = slope.drop(delete_list, axis=1) 
+    zero = zero.drop(delete_list, axis=1)   
+
+    merge = pd.concat([slope, zero], axis=0)
+    merge = pd.DataFrame(merge.values.T, index=merge.columns)
+
+    num_genes = len(gex1.columns) - 1  
+    num_timepoints = len(gex1)
+    alldim = len(merge.columns)
+    dim_slope_origin = int((len(slope) + 1) / 2)
+    dim_slope_gap = len(slope) - dim_slope_origin
+    dim_zero = len(zero)
+    
+    print('='*25 + 'The summary of the data being processed.' + '='*25)
+    print('num_genes: ', num_genes)
+    print('num_timepoints: ', num_timepoints)
+    print('dim_slope_origin: ', dim_slope_origin)
+    print('dim_slope_gap: ', dim_slope_gap)
+    print('dim_zero: ', dim_zero)
+    print('alldim: ', alldim)
+    print('='*88)
+
+    del slope,zero
+    gc.collect()
+
+    slope_origin = merge.iloc[:, 0:dim_slope_origin]
+    slope_origin = slope_origin.copy(deep=True)
+    for i in range(len(slope_origin)):
+        for j in range(len(slope_origin.columns)):
+            if slope_origin.iloc[i,j] > 0:
+                slope_origin.iloc[i,j] = 2
+            elif slope_origin.iloc[i,j] < 0:
+                slope_origin.iloc[i,j] = -2
+
+    slope_origin['sum'] = slope_origin.apply(lambda x: abs(x).sum(), axis=1)
+    merge['pre_cluster'] = ''
+    pre_cluster_idx = len(merge.columns) - 1
+    #print('pre_cluster_idx: ', pre_cluster_idx)
+    sum_idx = len(slope_origin.columns) - 1
+    #print('sum_idx: ', sum_idx)
+    for i in range(len(merge)):
+        if slope_origin.iloc[i,sum_idx] == 2 or slope_origin.iloc[i,sum_idx] == 0:
+            merge.iloc[i,pre_cluster_idx] = 0
+        else:
+            merge.iloc[i,pre_cluster_idx] = 1
+    # pre_counts = pd.value_counts(merge['pre_cluster'])
+    # x = pre_counts.index
+    # y = pre_counts
+    # plt.figure(figsize=(20,10))
+    # plt.title('{}: The numbers of zero and nonzero.'.format(celltype), fontsize=15)
+    # plt.bar(x, y)
+    # for a,b,i in zip(x,y,range(len(x))):
+    #     plt.text(a, b+0.1, "%.0f"%y[len(x)-1-i], ha='center', fontsize=15)
+    # plt.savefig('/home/special/user/huhuajie/clusters_final/cluster/{}/RemoveZero.png'.format(celltype))
+    # plt.close()
+
+    print('='*25 + 'Start first-layer clustering.' + '='*25)
+    os.makedirs('/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/'.format(celltype))
+    df1 = pd.DataFrame(columns = range(0,dim_slope_origin))
+    for i in range(len(merge)):
+        if merge.iloc[i, pre_cluster_idx] == 1:
+            df1 = df1.append(slope_origin.iloc[i,:sum_idx])
+
+    X = df1
+    ms = MeanShift(bandwidth=2, n_jobs = -1).fit(X)
+    labels = ms.labels_
+    n_clusters = len(set(labels))
+    num_layer1 = n_clusters
+    print("Estimated number of clusters: %d" % n_clusters)
+
+    df1['cluster'] = labels
+
+    cents = []
+    for i in range(n_clusters):
+        sum = 0
+        cluster_temp = df1.loc[df1['cluster'] == i]
+        length = len(cluster_temp.columns) - 1
+        for j in range(len(cluster_temp)):
+            temp = cluster_temp.iloc[j,0:length]
+            sum += temp
+
+        cents.append(sum/len(cluster_temp))
+
+    Separation = []
+    Cohesion = []
+    for i in range(n_clusters):
+        inter_sum = 0
+        intra_sum = 0
+        for j in range(n_clusters):
+            inter_temp = np.sqrt(np.sum((cents[j] - cents[i])**2))
+            inter_sum += inter_temp
+
+        if len(cents) == 1:
+            Separation.append(0)
+        else:
+            Separation.append(inter_sum/(len(cents)-1))
+
+        cluster_temp = df1.loc[df1['cluster'] == i]
+        length = len(cluster_temp.columns) - 1
+        for k in range(len(cluster_temp)):
+            intra_temp = np.sqrt(np.sum((cluster_temp.iloc[k,0:length] - cents[i])**2))
+            intra_sum += intra_temp
+
+        Cohesion.append(intra_sum/len(cluster_temp))
+
+    merge['layer1 clustering results'] = ''
+    for i in range(len(df1)):
+        merge.loc[df1.index[i],'layer1 clustering results'] = labels[i]
+
+    plt.figure(figsize=(20,10))
+    counts2 = pd.value_counts(labels)
+    x = counts2.index
+    y = counts2
+    plt.title('{}: The number of clusters is {}.'.format(celltype, n_clusters), fontsize=15)
+    plt.bar(x, y)
+    plt.savefig('/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/layer1_NumofClusters.png'.format(celltype))
+    plt.close()
+
+    results_clusters = pd.DataFrame(counts2)
+    results_clusters.columns=['numbers']
+    results_clusters['Cohesion'] = ''
+    results_clusters['Separation'] = ''
+    for i in range(len(Separation)):
+        results_clusters.loc[i,'Cohesion'] = Cohesion[i]
+        results_clusters.loc[i,'Separation'] = Separation[i]
+    results_clusters.to_csv('/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/layer1_results_of_Clustering.csv'.format(celltype))
+    print('='*24 + 'First-layer clustering was Down.' + '='*24)
+
+
+    print('='*25 + 'Start second-layer clustering.' + '='*25)
+    merge['layer2 clustering results'] = ''
+    num_layer2 = []
+    for i in range(num_layer1):
+        os.makedirs('/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/{}/'.format(celltype, i))
+        df2 = merge.loc[merge['layer1 clustering results'] == i]
+        df2 = df2.iloc[:,dim_slope_origin:(dim_slope_origin + dim_slope_gap)]
+        df2 = df2.copy(deep=True)
+        for j in range(len(df2)):
+            for k in range(len(df2.columns)):
+                if df2.iloc[j,k] > 0:
+                    df2.iloc[j,k] = 2
+                elif df2.iloc[j,k] < 0:
+                    df2.iloc[j,k] = -2
+
+        X = df2
+        if len(df2) <= 3:
+            labels = [0 for a in range(len(df2))]
+        else:
+            ms = MeanShift(bandwidth=2, n_jobs=-1).fit(X)
+            labels = ms.labels_
+
+        n_clusters = len(set(labels))
+        num_layer2.append(n_clusters)
+        # print("Estimated number of clusters: %d" % n_clusters)
+
+        df2['cluster'] = labels
+
+        cents = []
+        for g in range(n_clusters):
+            sum = 0
+            cluster_temp = df2.loc[df2['cluster'] == g]
+            length = len(cluster_temp.columns) - 1
+            for h in range(len(cluster_temp)):
+                temp = cluster_temp.iloc[h,0:length]
+                sum += temp
+
+            cents.append(sum/len(cluster_temp))
+
+        Separation = []
+        Cohesion = []
+        for l in range(len(cents)):
+            inter_sum = 0
+            intra_sum = 0
+            for m in range(len(cents)):
+                inter_temp = np.sqrt(np.sum((cents[m] - cents[l])**2))
+                inter_sum += inter_temp
+
+            if len(cents) == 1:
+                Separation.append(0)
+            else:
+                Separation.append(inter_sum/(len(cents)-1))
+
+            cluster_temp = df2.loc[df2['cluster'] == l]
+            length = len(cluster_temp.columns) - 1
+            for n in range(len(cluster_temp)):
+                intra_temp = np.sqrt(np.sum((cluster_temp.iloc[n,0:length] - cents[l])**2))
+                intra_sum += intra_temp
+
+            Cohesion.append(intra_sum/len(cluster_temp))
+
+        for j in range(len(df2.index)):
+            merge.loc[df2.index[j],'layer2 clustering results'] = labels[j]
+
+        plt.figure(figsize=(20,10))
+        counts2 = pd.value_counts(labels)
+        x = counts2.index
+        y = counts2
+        plt.title('{}: The number of clusters is {}.'.format(celltype, n_clusters), fontsize=15)
+        plt.bar(x, y)
+        plt.savefig('/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/{}/layer2_NumofClusters.png'.format(celltype, i))
+        plt.close()
+
+        results_clusters = pd.DataFrame(counts2)
+        results_clusters.columns=['numbers']
+        results_clusters['Cohesion'] = ''
+        results_clusters['Separation'] = ''
+        for k in range(len(Separation)):
+            results_clusters.loc[k,'Cohesion'] = Cohesion[k]
+            results_clusters.loc[k,'Separation'] = Separation[k]
+        results_clusters.to_csv('/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/{}/layer2_Results_of_Clustering.csv'.format(celltype, i))
+
+        # print('Layer2: No.' + str(i) + ' was down!')
+    print('='*24 + 'Second-layer clustering was down.' + '='*24)
+
+    print('='*25 + 'Start third-layer clustering.' + '='*25)
+    merge['layer3 clustering results'] = ''
+    num_layer3 = []
+    for i in range(num_layer1):
+        num_layer3_temp = []
+        for j in range(num_layer2[i]):
+            df3 = merge.loc[(merge['layer1 clustering results'] == i) & (merge['layer2 clustering results'] == j)]
+            os.makedirs('/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/{}/{}/'.format(celltype, i, j))
+            df3 = df3.iloc[:,dim_slope_gap:(dim_slope_origin + dim_slope_gap)]
+            df3 = df3.copy(deep=True)
+
+            X = Normalizer().fit_transform(df3)
+
+            if len(df3) > 3:
+                nn = NearestNeighbors(n_neighbors=2, n_jobs=-1).fit(X)
+                distances, idx = nn.kneighbors(X)
+                distances = np.sort(distances, axis=0)
+                distances = distances[:,1]
+                x = np.arange(len(distances))
+                y = distances
+                kneedle = KneeLocator(x, y, S=1.0, curve="convex", direction="increasing")
+                # print('The elbow is: ', kneedle.elbow_y)
+
+            if (len(df3) <= 3) or (kneedle.elbow_y == 0) or (kneedle.elbow_y == 'None') or (kneedle.elbow_y == None):
+                labels = [0 for k in range(len(df3))]
+            else:
+                bandwidth = kneedle.elbow_y
+                ms = MeanShift(bandwidth=bandwidth, n_jobs=-1).fit(X)
+                labels = ms.labels_
+
+
+            n_clusters = len(set(labels))
+            num_layer3_temp.append(n_clusters)
+            # print("Estimated number of clusters: %d" % n_clusters)
+
+            df3['cluster'] = labels
+
+            cents = []
+            for g in range(n_clusters):
+                sum = 0
+                cluster_temp = df3.loc[df3['cluster'] == g]
+                length = len(cluster_temp.columns) - 1
+                for h in range(len(cluster_temp)):
+                    temp = cluster_temp.iloc[h,0:length]
+                    sum += temp
+
+                cents.append(sum/len(cluster_temp))
+
+            Separation = []
+            Cohesion = []
+            for l in range(len(cents)):
+                inter_sum = 0
+                intra_sum = 0
+                for m in range(len(cents)):
+                    inter_temp = np.sqrt(np.sum((cents[m] - cents[l])**2))
+                    inter_sum += inter_temp
+
+                if len(cents) == 1:
+                    Separation.append(0)
+                else:
+                    Separation.append(inter_sum/(len(cents)-1))
+
+                cluster_temp = df3.loc[df3['cluster'] == l]
+                length = len(cluster_temp.columns) - 1
+                for n in range(len(cluster_temp)):
+                    intra_temp = np.sqrt(np.sum((cluster_temp.iloc[n,0:length] - cents[l])**2))
+                    intra_sum += intra_temp
+
+                Cohesion.append(intra_sum/len(cluster_temp))
+
+            for a in range(len(df3.index)):
+                merge.loc[df3.index[a],'layer3 clustering results'] = labels[a]
+
+
+            plt.figure(figsize=(20,10))
+            counts3 = pd.value_counts(labels)
+            x = counts3.index
+            y = counts3
+            plt.title('{}: The number of clusters is {}.'.format(celltype, n_clusters), fontsize=15)
+            plt.bar(x, y)
+            plt.savefig('/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/{}/{}/layer3_NumofClusters.png'.format(celltype, i, j))
+            plt.close()
+
+            results_clusters = pd.DataFrame(counts3)
+            results_clusters.columns=['numbers']
+            results_clusters['Cohesion'] = ''
+            results_clusters['Separation'] = ''
+            for k in range(len(Separation)):
+                results_clusters.loc[k,'Cohesion'] = Cohesion[k]
+                results_clusters.loc[k,'Separation'] = Separation[k]
+            results_clusters.to_csv('/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/{}/{}/layer3_Results_of_Clustering.csv'.format(celltype, i, j))
+            # print('Layer3: No.' + str(j) + ' in cluster ' + str(i) + '(Layer2) was down!')
+
+        num_layer3.append(num_layer3_temp)
+    print('='*25 + 'Third-layer clustering was down.' + '='*25)
+
+    merge['layer4 clustering results'] = ''
+    merge['The_cohesion_of_the_last_layer'] = ''
+    merge['The_separation_of_the_last_layer'] = ''
+    num_layer4 = []
+    for i in range(num_layer1):
+        for j in range(num_layer2[i]):
+            for k in range(num_layer3[i][j]):
+                df4 = merge.loc[(merge['layer1 clustering results'] == i) & (merge['layer2 clustering results'] == j) & (merge['layer3 clustering results'] == k)]
+                os.makedirs('/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/{}/{}/{}/'.format(celltype, i, j, k))
+                df4 = df4.iloc[:,(dim_slope_origin + dim_slope_gap):(dim_slope_origin + dim_slope_gap + dim_zero)]
+                df4 = df4.copy(deep=True)
+
+                X = Normalizer().fit_transform(df4)
+
+                if len(df4) > 3:
+                    nn = NearestNeighbors(n_neighbors=2, n_jobs=-1).fit(X)
+                    distances, idx = nn.kneighbors(X)
+                    distances = np.sort(distances, axis=0)
+                    distances = distances[:,1]
+                    x = np.arange(len(distances))
+                    y = distances
+                    kneedle = KneeLocator(x, y, S=1.0, curve="convex", direction="increasing")
+                    # print('The elbow is: ', kneedle.elbow_y)
+
+                if (len(df4) <= 3) or (kneedle.elbow_y == 0) or (kneedle.elbow_y == 'None') or (kneedle.elbow_y == None):
+                    labels = [0 for b in range(len(df4))]
+                else:
+                    bandwidth = kneedle.elbow_y
+                    ms = MeanShift(bandwidth=bandwidth, n_jobs = -1).fit(X)
+                    labels = ms.labels_
+
+                n_clusters = len(set(labels))
+                num_layer3_temp.append(n_clusters)
+                # print("Estimated number of clusters: %d" % n_clusters)
+
+                df4['cluster'] = labels
+
+                cents = []
+                for g in range(n_clusters):
+                    sum = 0
+                    cluster_temp = df4.loc[df4['cluster'] == g]
+                    length = len(cluster_temp.columns) - 1
+                    for h in range(len(cluster_temp)):
+                        temp = cluster_temp.iloc[h,0:length]
+                        sum += temp
+
+                    cents.append(sum/len(cluster_temp))
+
+                Separation = []
+                Cohesion = []
+                for l in range(len(cents)):
+                    inter_sum = 0
+                    intra_sum = 0
+                    for m in range(len(cents)):
+                        inter_temp = np.sqrt(np.sum((cents[m] - cents[l])**2))
+                        inter_sum += inter_temp
+
+                    if len(cents) == 1:
+                        Separation.append(0)
+                    else:
+                        Separation.append(inter_sum/(len(cents)-1))
+
+                    cluster_temp = df4.loc[df4['cluster'] == l]
+                    length = len(cluster_temp.columns) - 1
+                    for n in range(len(cluster_temp)):
+                        intra_temp = np.sqrt(np.sum((cluster_temp.iloc[n,0:length] - cents[l])**2))
+                        intra_sum += intra_temp
+
+                    Cohesion.append(intra_sum/len(cluster_temp))
+
+                for a in range(len(df4.index)):
+                    merge.loc[df4.index[a],'layer4 clustering results'] = labels[a]
+                    merge.loc[df4.index[a],'The_cohesion_of_the_last_layer'] = Cohesion[labels[a]]
+                    merge.loc[df4.index[a],'The_separation_of_the_last_layer'] = Separation[labels[a]]
+
+                plt.figure(figsize=(20,10))
+                counts4 = pd.value_counts(labels)
+                x = counts4.index
+                y = counts4
+                plt.title('{}: The number of clusters is {}.'.format(celltype, n_clusters), fontsize=15)
+                plt.bar(x, y)
+                plt.savefig('/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/{}/{}/{}/layer4_NumofClusters.png'.format(celltype, i, j, k))
+                plt.close()
+
+                results_clusters = pd.DataFrame(counts4)
+                results_clusters.columns=['numbers']
+                results_clusters['Cohesion'] = ''
+                results_clusters['Separation'] = ''
+                for b in range(len(Separation)):
+                    results_clusters.loc[b,'Cohesion'] = Cohesion[b]
+                    results_clusters.loc[b,'Separation'] = Separation[b]
+                results_clusters.to_csv('/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/{}/{}/{}/layer4_Results_of_Clustering.csv'.format(celltype, i, j, k))
+
+                # print('Layer4: No.' + str(k) + ' in cluster ' + str(j) + '(Layer3) was down!')
+
+
+    x = np.arange(num_timepoints)
+    for i in range(1, num_genes + 1):
+        geneName = merge.index[i-1]
+
+        y1 = gex1[geneName]
+        y2 = gex2[geneName]
+        y3 = gex3[geneName]
+        y4 = gex4[geneName]
+        y_upper, y_lower, y = [], [], []
+        plt.figure(figsize = (6, 3))
+        plt.xlim((-0.5,9.5))
+        plt.xticks(x)
+        for k in range(len(y1)):
+          y_tmp = (y1[k] + y2[k] + y3[k] + y4[k]) / 4
+          ymax = (max(y1[k], y2[k], y3[k], y4[k]))
+          ymin = (min(y1[k], y2[k], y3[k], y4[k]))
+          y_upper.append(ymax - y_tmp)
+          y_lower.append(y_tmp - ymin)
+          y.append(y_tmp)
+        plt.errorbar(x, y, yerr = [y_lower, y_upper], fmt='o-', ecolor='r', color='b', elinewidth=1, capsize=4)
+        path = '/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/'.format(celltype)
+        for j in [alldim, alldim + 1, alldim + 2, alldim + 3, alldim + 4]:
+            if merge.iloc[i-1,j] != None:
+                path = path + str(merge.iloc[i-1,j]) + '/'
+        if not os.path.exists(path):
+            os.makedirs(path)
+        if geneName == 'THRA1/BTR':
+          geneName = 'THRA1_BTR'
+        if geneName == 'THRA1/BTR_flip':
+          geneName = 'THRA1_BTR_flip'
+        plt.savefig('{}{}.png'.format(path, geneName))
+        plt.close()
+        if i % 1000 == 0 or i == num_genes:
+            print(str(i) + '/' + str(num_genes) + ' was down.')
+
+    merge.to_csv('/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/Results_{}.csv'.format(celltype,celltype))
+
+    overTime = time.time()
+    spendtime = (overTime - startTime) / 60
+    print('{} was Down! Time taken: {} mins'.format(celltype, spendtime))
+```
+Finally, a line graph of co-expressed genes can be drawn
+```{python graph,eval=FALSE}
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib import colors
+import pandas as pd
+import numpy as np
+import time
+import os
+
+changecolor = colors.Normalize(vmin=0, vmax=1.0)
+
+annotations = ['Naïve CD4+ T cells', 'Naïve CD8+ T cells', 'NK/NKT', 'Plasmablasts/Memrary B', 'Naïve B',
+               'Intermediate B', 'CD14+ Mono', 'CD16+ Mono', 'CD4+ Tcm', 'Plasmacytoid DC', 'Treg', 
+                'CD8+ Tem', 'MAIT']
+# annotations = ['Eryth/Platelet CD14+ Mono new']
+
+for celltype in annotations:
+    startTime = time.time()
+    print('Start processing {}.'.format(celltype))
+    celltype = celltype.replace(' ', '_')
+    celltype = celltype.replace('/', '_')
+
+    gex1 = pd.read_csv('/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/byPeople/P1_{}.csv'.format(celltype))
+    gex1 = gex1.fillna(0)
+    gex1_newcol = {}
+    for i in range(1,len(gex1.columns)):
+        y = gex1.iloc[:,i]
+        ymax = max(y)
+        ymin = min(y)
+        yflip = (ymax + ymin) - y
+        newcol = gex1.columns[i] + '_flip'
+        gex1_newcol[newcol] = yflip
+    gex1_newcol_df = pd.DataFrame(gex1_newcol)
+    gex1 = pd.concat([gex1, gex1_newcol_df], axis=1)
+
+    gex2 = pd.read_csv('/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/byPeople/P2_{}.csv'.format(celltype))
+    gex2 = gex2.fillna(0)
+    gex2_newcol = {}
+    for i in range(1,len(gex2.columns)):
+        y = gex2.iloc[:,i]
+        ymax = max(y)
+        ymin = min(y)
+        yflip = (ymax + ymin) - y
+        newcol = gex2.columns[i] + '_flip'
+        gex2_newcol[newcol] = yflip
+    gex2_newcol_df = pd.DataFrame(gex2_newcol)
+    gex2 = pd.concat([gex2, gex2_newcol_df], axis=1)
+
+    gex3 = pd.read_csv('/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/byPeople/P3_{}.csv'.format(celltype))
+    gex3 = gex3.fillna(0)
+    gex3_newcol = {}
+    for i in range(1,len(gex3.columns)):
+        y = gex3.iloc[:,i]
+        ymax = max(y)
+        ymin = min(y)
+        yflip = (ymax + ymin) - y
+        newcol = gex3.columns[i] + '_flip'
+        gex3_newcol[newcol] = yflip
+    gex3_newcol_df = pd.DataFrame(gex3_newcol)
+    gex3 = pd.concat([gex3, gex3_newcol_df], axis=1)
+
+    gex4 = pd.read_csv('/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/byPeople/P4_{}.csv'.format(celltype))
+    gex4 = gex4.fillna(0)
+    gex4_newcol = {}
+    for i in range(1,len(gex4.columns)):
+        y = gex4.iloc[:,i]
+        ymax = max(y)
+        ymin = min(y)
+        yflip = (ymax + ymin) - y
+        newcol = gex4.columns[i] + '_flip'
+        gex4_newcol[newcol] = yflip
+    gex4_newcol_df = pd.DataFrame(gex4_newcol)
+    gex4 = pd.concat([gex4, gex4_newcol_df], axis=1)
+
+    ref = pd.read_csv('/database/huhuajie/findCoexpressionGenes/finalResults/filtered/filtered_{}.csv'.format(celltype))
+    ref = ref.iloc[:,1:]
+    results = ref['clustering results']
+    geneNames = ref['gene']
+
+    size = pd.read_csv('/database/huhuajie/findCoexpressionGenes/finalResults/getZero/ZeroPT_{}.csv'.format(celltype))
+    size = size.fillna(0)
+    size_newcol ={}
+    for i in range(0,len(size.columns)):
+        zero_flip = size.iloc[:,i]
+        newcol = size.columns[i] + '_flip'
+        size_newcol[newcol] = zero_flip
+    size_newcol_df = pd.DataFrame(size_newcol)
+    size = pd.concat([size, size_newcol_df], axis=1)
+
+    cv = pd.read_csv('/database/huhuajie/findCoexpressionGenes/finalResults/getCV/CV_{}.csv'.format(celltype))
+    cv = cv.fillna(0)
+    cv_newcol = {}
+    for i in range(0,len(cv.columns)):
+        cv_flip = cv.iloc[:,i]
+        newcol = cv.columns[i] + '_flip'
+        cv_newcol[newcol] = cv_flip
+    cv_newcol_df = pd.DataFrame(cv_newcol)
+    cv = pd.concat([cv, cv_newcol_df], axis=1)
+
+    x = [num for num in range(len(gex1))]
+    x_label = [0, 1, 3, 6, 14, 30, 31, 33, 36, 44]
+
+    print('num of genes:{}'.format(len(geneNames)))
+    for i in range(len(geneNames)):
+        if i % 50 == 0 or i == len(geneNames) - 1:
+            print(i)
+        geneName = geneNames[i]
+        path = '/database/huhuajie/findCoexpressionGenes/finalResults/draw/{}/{}/'.format(celltype, results[i])
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        data1 = gex1[geneName]
+        data2 = gex2[geneName].iloc[0:10]
+        data3 = gex3[geneName]
+        data4 = gex4[geneName]
+        y_mean, y = [], []
+        for j in range(len(data1)):
+            y_mean.append((data1[j] + data2[j] + data3[j] + data4[j]) / 4)
+            y.append([data1[j], data2[j], data3[j], data4[j]])
+        size_tmp = np.array(size[geneName]) * 200
+        cv_tmp = np.array(cv[geneName])
+
+        if geneName == 'THRA1/BTR':
+            geneName = 'THRA1_BTR'
+        if geneName == 'THRA1/BTR_flip':
+            geneName = 'THRA1_BTR_flip'
+
+        plt.figure(figsize=(12, 11))
+
+        plt.subplot(2, 1, 1)
+        plt.xlim((-0.5,9.5))
+        plt.xlabel('Timepoints')
+        plt.ylabel('Gene Expression')
+        plt.plot(x, y_mean, linewidth=2.5, alpha=0.6,)
+        plt.scatter(x, y_mean, marker='o', s=size_tmp, c=cv_tmp, cmap='rainbow', alpha=0.8)
+        plt.boxplot(y, sym='o', showmeans=True, meanline=True, meanprops={'linestyle':'-', 'color':'orange'}, medianprops={'linestyle':''}, positions=x)
+        plt.colorbar(label="Coefficient of Variation", )
+        plt.xticks(x, x_label)
+        plt.title('Celltype:{}   Gene:{}'.format(celltype, geneName))
+        for s in [50, 100, 200]:
+            plt.scatter([], [], c='k', alpha=0.3, s=s,
+                        label=str(int(s/2)) + '%')
+        plt.legend(scatterpoints=1, frameon=False, labelspacing=1, title='Non-zero Percentage', loc='best')
+
+        plt.subplot(2, 1, 2)
+        plt.xlim((-0.5,9.5))
+        plt.xlabel('Timepoints')
+        plt.ylabel('Gene Expression')
+        plt.plot(x, data1, linewidth=2.5, label = 'P1')
+        plt.plot(x, data2, linewidth=2.5, label = 'P2')
+        plt.plot(x, data3, linewidth=2.5, label = 'P3')
+        plt.plot(x, data4, linewidth=2.5, label = 'P4')
+        plt.xticks(x, x_label)
+        plt.legend()
+        plt.title('Celltype:{}   Gene:{}'.format(celltype, geneName))
+
+        plt.savefig('{}/{} among 4 people.pdf'.format(path, geneName))
+        plt.close()
+
+    overTime = time.time()
+    spendtime = (overTime - startTime) / 60
+    print('{} was Down! Time taken: {} mins'.format(celltype, spendtime))
+
+```
+```{r KEGG,eval=FALSE}
+library(clusterProfiler)
+library(org.Hs.eg.db)
+celltypes <- c('Naïve CD4+ T cells', 'Naïve CD8+ T cells', 'NK/NKT', 'Memory B', 'Naïve B',
+                'Intermediate B', 'CD14+ Mono', 'CD16+ Mono', 'CD4+ Tcm', 'Plasmacytoid DC', 'Treg', 
+                'CD8+ Tem', 'MAIT')
+cell_type<-gsub('/','_',cell_type)
+cell_type<-gsub(' ','_',cell_type)
+KEGG_DEG<-list()
+GO_DEG <- list()
+clustering=list()
+filterd=list()
+filterd1=list()
+trans_KEGG_DEG=list()
+trans_GO_DEG=list()
+temp <- list()
+
+
+for( i in 1:length(cell_type)){
+print(cell_type[i])
+annotation<-read.table(paste0('/database/wangrong/Results/0712_ATAC+RNA/gene_clustering/filtered/filtered_',cell_type[i],'.csv'),header = TRUE,sep = ",")
+colnames(annotation)<-gsub(' ','.',colnames(annotation))
+del <- grep('_flip', annotation$gene, value = F)
+annotation <- annotation[-del,]
+print(dim(annotation))
+clustering[[i]]<-levels(factor(annotation$clustering.results))
+print(paste(cell_type[i],' is filtered'))
+
+
+for( j in 1:length(clustering[[i]])){
+	print(clustering[[i]][[j]])
+	clustering_gene_table<-annotation[annotation$clustering.results==clustering[[i]][[j]],]
+	clustering_gene_table$gene<-as.character(clustering_gene_table$gene)
+tryCatch(expr = {
+  df <-(bitr(clustering_gene_table$gene, fromType = "SYMBOL",toType = c( "ENTREZID"),OrgDb="org.Hs.eg.db"))
+KEGG_DEG[[j]] <- enrichKEGG(df$ENTREZID,organism = "hsa",pAdjustMethod = "none", pvalueCutoff = 0.05)
+temp[[j]] <- setReadable(KEGG_DEG[[j]],OrgDb = "org.Hs.eg.db",keyType = "ENTREZID")
+trans_KEGG_DEG[[j]]<-temp[[j]]
+	trans_KEGG_DEG[[j]]@result$clustering<-rep(clustering[[i]][[j]], nrow(trans_KEGG_DEG[[j]]@result))
+	print(paste0(cell_type[i],'_',clustering[[i]][[j]],'KEGG is done'))
+},
+error = function(e){          
+    print('bug')
+    }
+  )}
+write.csv(do.call(rbind,lapply(trans_KEGG_DEG,as.data.frame)),file=paste('/database/wangrong/Results/0712_ATAC+RNA/gene_clustering/enrichment_kegg/',cell_type[i],'_KEGG.csv'))
+
+}  
+
+KEGG_list <- list()
+for( k in 1:length(cell_type)){
+KEGG_list[[k]] <- read.table(paste('/database/wangrong/Results/0712_ATAC+RNA/gene_clustering/enrichment_kegg/6.23/6.7_',cell_type[k],'_KEGG.csv'),header = TRUE,sep = ",")
+KEGG_list[[k]]$cell_type <- rep(cell_type[k], nrow(KEGG_list[[k]]))
+}
+ALL_KEGG <- do.call(rbind,KEGG_list)
+filter_all_KEGG <- ALL_KEGG[ALL_KEGG$Count>2,]
+sord_all_KEGG <- filter_all_KEGG[order(filter_all_KEGG$pvalue),]
+ write.csv(sord_all_KEGG,file='/database/wangrong/Results/0712_ATAC+RNA/gene_clustering/enrichment_kegg/6.23/sord_all_KEGG_.csv')
+```
+
+
+##  Mashr analysis
+The multivariate adaptive shrinkage in R (mashr) method was used to estimate the effect of ten time points on gene expression in different cell types
+We assume that we have measurements in multiple timepoints, and want to estimate the deviation in each timepoints from the pre-vaccination
+```{r mashr,eval=FALSE}
+library(scater)
+library(Seurat)
+library(tidyverse)
+library(cowplot)
+library(Matrix.utils)
+library(edgeR)
+library(dplyr)
+library(magrittr)
+library(Matrix)
+library(purrr)
+library(reshape2)
+library(S4Vectors)
+library(tibble)
+library(SingleCellExperiment)
+library(pheatmap)
+library(apeglm)
+library(png)
+library(DESeq2)
+library(RColorBrewer)
+library(limma)
+library(edgeR)
+library(mashr)
+
+
+counts <- pbmc@assays$RNA@counts
+metadata<-pbmc@meta.data
+metadata<-metadata[,c("orig.ident","Participants","Timepoints","celltype")]
+metadata$orig.ident <- gsub("-","",metadata$orig.ident)
+metadata$Timepoints <- as.factor(metadata$Timepoints)
+metadata$Participants <- as.factor(metadata$Participants)
+metadata$orig.ident <- as.factor(metadata$orig.ident)
+
+sce <- SingleCellExperiment(assays = list(counts = counts), colData = metadata)
+#groups <- colData(sce)[, c("celltype", "orig.ident")]
+Timepoints <- purrr::set_names(levels(sce$Timepoints))
+nt <- length(Timepoints)
+celltype <- purrr::set_names(levels(sce$celltype))
+na<- length(celltype)
+Participants <- purrr::set_names(levels(sce$Participants))
+np<- length(Participants)
+orig.ident <- purrr::set_names(levels(sce$orig.ident))
+nr<- length(orig.ident)
+table(sce$orig.ident)				
+nr_cells <- as.numeric(table(sce$orig.ident))
+mr <- match(orig.ident, sce$orig.ident)
+eia <- data.frame(colData(sce)[mr, ], nr_cells, row.names = NULL) 
+groups <- colData(sce)[, c("celltype","orig.ident")]
+pb1 <- aggregate.Matrix(t(counts(sce)), groupings = groups, fun = "sum") 
+class(pb1)
+dim(pb1)
+pb1[1:6, 1:6]
+splitf <- sapply(stringr::str_split(rownames(pb1), pattern = "_",  n = 2), `[`, 1)
+pb2 <- split.data.frame(pb1, factor(splitf)) %>%lapply(function(u) set_colnames(t(u), stringr::str_extract(rownames(u), "(?<=_)[:alnum:]+")))
+str(pb2)
+options(width = 100)
+table(sce$celltype, sce$orig.ident)
+
+get_sample_ids <- function(x){
+        pb2[[x]] %>%colnames()
+}
+de_samples <- map(1:length(celltype ), get_sample_ids) %>%unlist()
+
+samples_list <- map(1:length(celltype), get_sample_ids)
+get_cluster_ids <- function(x){
+        rep(names(pb2)[x], each = length(samples_list[[x]]))
+}
+de_cluster_ids <- map(1:length(celltype), get_cluster_ids) %>%unlist()
+
+gg_df <- data.frame(celltype = de_cluster_ids,orig.ident = de_samples)
+gg_df <- left_join(gg_df, eia[, c("orig.ident","Timepoints", "Participants")]) 
+metadata <- gg_df %>%dplyr::select(celltype , orig.ident, Timepoints, Participants)         
+
+metadata$celltype <- as.factor(metadata$celltype)
+clusters <- levels(metadata$celltype)
+save(pb2,metadata, clusters, file = "/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/6.21.psudocelltype.matrix.RData")
+
+
+
+load( file = "/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/6.21.psudocelltype.matrix.RData")
+
+clusters<-gsub("/","_",clusters)
+metadata$celltype<-gsub("/","_",metadata$celltype)
+names(pb2)<-gsub("/","_",names(pb2))
+
+for( i in 1:length(clusters)){
+print(clusters[i])
+
+cluster_metadata <- metadata[which(metadata$celltype == clusters[i]), ]
+cluster_metadata <- cluster_metadata[which(cluster_metadata$Timepoints != "Day171"),]
+cluster_metadata <- cluster_metadata[which(cluster_metadata$Timepoints != "Day185"),]
+print(head(cluster_metadata))
+rownames(cluster_metadata) <- cluster_metadata$orig.ident
+counts <- pb2[[clusters[i]]]
+cluster_counts <- data.frame(counts[, which(colnames(counts) %in% rownames(cluster_metadata))])   
+dim(cluster_counts)
+
+condition <- factor(cluster_metadata$Timepoints, levels = c(c("Day0","Day1","Day3","Day6","Day14","Day30","Day31","Day33","Day36","Day44") ) )
+design <- model.matrix(~0 + condition ,cluster_metadata)
+
+y <- DGEList(cluster_counts)
+y <- calcNormFactors(y)
+
+v = voom(y, design)
+
+timepoints.gene <- lmFit( v , design)
+timepoints.Bayes.gene <- eBayes(timepoints.gene)
+
+timepoints.condition.gene.mean <-timepoints.Bayes.gene$coefficients[, 1:10]
+timepoints.condition.gene.se <- ( timepoints.Bayes.gene$stdev.unscaled * sqrt(timepoints.Bayes.gene$s2.post) )[,1:10]
+
+colnames(timepoints.condition.gene.mean) <- colnames(timepoints.condition.gene.se) <- gsub("condition","", colnames(timepoints.condition.gene.se))
+#machr
+data.gene = mash_set_data(timepoints.condition.gene.mean, timepoints.condition.gene.se)
+data.L.gene = mash_update_data(data.gene, ref = 1)
+U.c.gene = cov_canonical(data.L.gene)
+print(head(names(U.c.gene)))
+mashcontrast.model.gene = mash(data.L.gene, U.c.gene  )
+
+pdf(file=paste0('/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/7.15_timepoints_',clusters[[i]],'.pairwise_sharing.pdf'))
+corrplot(get_pairwise_sharing(mashcontrast.model.gene, factor=0.5, lfsr_thresh = 0.1) , method='color', cl.lim=c(0,1), type='upper', addCoef.col = "black", tl.col="black", tl.srt=45, title = 'Pairwise Sharing by Magnitude\n(< Factor of 2)', mar = c(4,0,4,0))
+dev.off()
+print(head( get_pm(mashcontrast.model.gene) ))
+
+est_pi <- data.frame( Type = factor( names(get_estimated_pi(mashcontrast.model.gene) ), levels = c(names(get_estimated_pi(mashcontrast.model.gene) )) ), 
+                      estimates =  get_estimated_pi(mashcontrast.model.gene)  )
+
+pdf(file=paste0('/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/7.15_timepoints_',clusters[[i]],'.est_pi.pdf'))
+ggplot( est_pi, aes( x = Type, y = estimates) )+
+	geom_bar(stat = "identity")+
+	ylab(expression( pi) )+
+	theme_classic()+
+	theme(text = element_text(color = "black", size = 18), axis.text = element_text(color = "black"), axis.text.x = element_text(angle = -45, vjust = 0), plot.margin = margin(r = 10, b = 10) )+
+	scale_y_continuous(expand = c(0,0))
+dev.off()
+sig.DEG_ID <- get_significant_results(mashcontrast.model.gene,thresh = 0.1) 
+
+mashResult.gene <- get_pm(mashcontrast.model.gene)
+colnames(mashResult.gene) <- gsub("-Day0",".log2FC",colnames(mashResult.gene))
+mashResult.gene <- cbind(mashResult.gene, get_lfsr( mashcontrast.model.gene ) )
+colnames(mashResult.gene) <- gsub("-Day0",".lfsr",colnames(mashResult.gene))
+sig.mashResults.gene<- mashResult.gene[sig.DEG_ID,]
+sig.mashResults.gene<-as.data.frame(sig.mashResults.gene)
+sig.mashResults.gene$total.lfsr<-rowSums(sig.mashResults.gene[, c(10,11,12,13,14,15,16,17,18)])
+sig.mashResults.gene<-sig.mashResults.gene[order(sig.mashResults.gene$total.lfsr),]
+sig.mashResults.gene<-sig.mashResults.gene[1:25,]
+write.csv(sig.mashResults.gene,file=paste0('/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/7.15_timepoints_',clusters[[i]],'.sig.mashResults.gene.top25.csv'))
+
+
+sig.mashResults.gene_melt <- data.frame( geneName = rep( rownames(sig.mashResults.gene), 9 ),
+                                                    posterior.log2FC = c(sig.mashResults.gene$Day1.log2FC,
+                                                                        sig.mashResults.gene$Day3.log2FC,
+                                                                        sig.mashResults.gene$Day6.log2FC,
+                                                                        sig.mashResults.gene$Day14.log2FC,
+																		sig.mashResults.gene$Day30.log2FC,
+                                                                        sig.mashResults.gene$Day31.log2FC,
+                                                                        sig.mashResults.gene$Day33.log2FC,
+                                                                        sig.mashResults.gene$Day36.log2FC,
+																		sig.mashResults.gene$Day44.log2FC),
+                                                    lfsr = c( sig.mashResults.gene$Day1.lfsr,
+                                                              sig.mashResults.gene$Day3.lfsr,
+                                                              sig.mashResults.gene$Day6.lfsr,
+                                                              sig.mashResults.gene$Day14.lfsr,
+															  sig.mashResults.gene$Day30.lfsr,
+                                                              sig.mashResults.gene$Day31.lfsr,
+                                                              sig.mashResults.gene$Day33.lfsr,
+                                                              sig.mashResults.gene$Day36.lfsr,
+															  sig.mashResults.gene$Day44.lfsr),
+                                                    condition = c( rep("Day1", nrow(sig.mashResults.gene) ),
+                                                                   rep("Day3", nrow(sig.mashResults.gene) ),
+                                                                   rep("Day6", nrow(sig.mashResults.gene) ),
+                                                                   rep("Day14", nrow(sig.mashResults.gene) ), 
+                                                                   rep("Day30", nrow(sig.mashResults.gene) ),
+                                                                   rep("Day31", nrow(sig.mashResults.gene) ),
+                                                                   rep("Day33", nrow(sig.mashResults.gene) ),
+                                                                   rep("Day36", nrow(sig.mashResults.gene) ),
+																   rep("Day44", nrow(sig.mashResults.gene) )))
+
+sig.mashResults.gene_melt$condition <- factor(sig.mashResults.gene_melt$condition , levels = c("Day1","Day3","Day6","Day14","Day30","Day31","Day33","Day36","Day44") ) 
+pdf(file=paste0('/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/7.15_timepoints_',clusters[[i]],'.sig.mashResults.gene.pdf'))
+ggplot(sig.mashResults.gene_melt, aes( x = condition, y = geneName, size = -log(lfsr), color = posterior.log2FC ) )+geom_point()+scale_color_gradientn( colors=c("cyan","red" ))+scale_size_continuous(breaks= -log(c(0.4,0.1,0.05,0.01,0.001)),labels=c(0.4,0.1,0.05,0.01,0.001), range = c(0.5,8),  name = "lfsr" )+geom_point(data =sig.mashResults.gene_melt[sig.mashResults.gene_melt$lfsr<0.1,], aes( x = condition, y = geneName, size = -log(lfsr) ), shape = 1, color = "black" )+ggtitle("Significant in at least one conditions")+theme_bw()+theme(
+                   panel.grid.minor = element_blank(), axis.line = element_line(colour = "black",size = 1),
+                   plot.title = element_text(size = 16, hjust = 0.5),
+                   axis.title=element_blank(),
+                   legend.title=element_text(size=15 ),legend.text = element_text(size = 20),
+                   axis.text.x = element_text(size = 15,angle = -20, vjust = 0.3 , color = "black") ,axis.text.y = element_text(size = 15, color = "black" ) )
+dev.off()
+print(paste0(clusters[i],'is done!'))
+}
+
+marshr.gene<-list()
+for (i in 1:length(clusters)){
+print(clusters[i])
+marshr.gene[[i]] <- read.table(file=paste0('/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/6.24_timepoints_',clusters[[i]],'.sig.mashResults.gene.top25.csv'),sep = ",",header=TRUE)
+marshr.gene[[i]]$celltype<-rep(clusters[[i]],25)
+}
+all_mashr<-do.call(rbind,marshr.gene)
+```
+we have used PCA to compute data driven covariances. The analysis result is the same as the classic of covariance matrix
+```{r data_driven,eval=FALSE}
+load( file = "/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/6.21.psudocelltype.matrix.RData")
+
+clusters<-gsub("/","_",clusters)
+metadata$celltype<-gsub("/","_",metadata$celltype)
+names(pb2)<-gsub("/","_",names(pb2))
+m2<-list()
+for( i in 1:length(clusters)){
+print(clusters[i])
+
+cluster_metadata <- metadata[which(metadata$celltype == clusters[i]), ]
+cluster_metadata <- cluster_metadata[which(cluster_metadata$Timepoints != "Day171"),]
+cluster_metadata <- cluster_metadata[which(cluster_metadata$Timepoints != "Day185"),]
+print(head(cluster_metadata))
+rownames(cluster_metadata) <- cluster_metadata$orig.ident
+counts <- pb2[[clusters[i]]]
+cluster_counts <- data.frame(counts[, which(colnames(counts) %in% rownames(cluster_metadata))])   
+dim(cluster_counts)
+
+condition <- factor(cluster_metadata$Timepoints, levels = c(c("Day0","Day1","Day3","Day6","Day14","Day30","Day31","Day33","Day36","Day44") ) )
+design <- model.matrix(~0 + condition ,cluster_metadata)
+
+y <- DGEList(cluster_counts)
+y <- calcNormFactors(y)
+
+v = voom(y, design)
+
+timepoints.gene <- lmFit( v , design)
+timepoints.Bayes.gene <- eBayes(timepoints.gene)
+
+timepoints.condition.gene.mean <-timepoints.Bayes.gene$coefficients[, 1:10]
+timepoints.condition.gene.se <- ( timepoints.Bayes.gene$stdev.unscaled * sqrt(timepoints.Bayes.gene$s2.post) )[,1:10]
+
+colnames(timepoints.condition.gene.mean) <- colnames(timepoints.condition.gene.se) <- gsub("condition","", colnames(timepoints.condition.gene.se))
+#select strong signals
+data.gene = mash_set_data(timepoints.condition.gene.mean, timepoints.condition.gene.se)
+m.1by1 = mash_1by1(data.gene)
+strong.subset = get_significant_results(m.1by1,0.05)
+
+# identify a random subset of 5000 tests
+random.subset = sample(1:nrow(timepoints.condition.gene.mean),5000)
+# create random and strong sets
+data.temp = mash_set_data(timepoints.condition.gene.mean[random.subset,],timepoints.condition.gene.se[random.subset,])
+Vhat = estimate_null_correlation_simple(data.temp)
+rm(data.temp)
+data.random = mash_set_data(timepoints.condition.gene.mean[random.subset,],timepoints.condition.gene.se[random.subset,],V=Vhat)
+data.strong = mash_set_data(timepoints.condition.gene.mean[strong.subset,],timepoints.condition.gene.se[strong.subset,], V=Vhat)
+# empirical Bayes matrix factorization
+U.f = cov_flash(data.strong, factors="nonneg", tag="non_neg", var_type="constant")
+
+#Obtain initial data-driven covariance matrices
+U.pca = cov_pca(data.strong,5)
+print(names(U.pca))
+#Apply Extreme Deconvolution
+U.ed = cov_ed(data.strong, c(U.f, U.pca))
+U.c = cov_canonical(data.random)
+#Run mash
+m = mash(data.random, Ulist = c(U.ed,U.c), outputlevel = 1)
+m2[[i]] = mash(data.strong, g=get_fitted_g(m), fixg=TRUE)
+
+head(get_lfsr(m2[[i]]))
+
+print(head(names(m2[[i]])))
+
+pdf(file=paste0('/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/2.21_timepoints_',clusters[[i]],'.pairwise_sharing.pdf'))
+corrplot(get_pairwise_sharing(m2[[i]], factor=0.5, lfsr_thresh = 0.1) , method='color', cl.lim=c(0,1), type='upper', addCoef.col = "black", tl.col="black", tl.srt=45, title = 'Pairwise Sharing by Magnitude\n(< Factor of 2)', mar = c(4,0,4,0))
+dev.off()
+print(head( get_pm(m2[[i]]) ))
+
+est_pi <- data.frame( Type = factor( names(get_estimated_pi(m2[[i]]) ), levels = c(names(get_estimated_pi(m2[[i]]) )) ), 
+                      estimates =  get_estimated_pi(m2[[i]])  )
+
+pdf(file=paste0('/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/2.21_data.driven_',clusters[[i]],'.est_pi.pdf'))
+ggplot( est_pi, aes( x = Type, y = estimates) )+
+	geom_bar(stat = "identity")+
+	ylab(expression( pi) )+
+	theme_classic()+
+	theme(text = element_text(color = "black", size = 18), axis.text = element_text(color = "black"), axis.text.x = element_text(angle = -45, vjust = 0), plot.margin = margin(r = 10, b = 10) )+
+	scale_y_continuous(expand = c(0,0))
+dev.off()
+
+print(paste0(clusters[i],'is done!'))
+}
+
+```
+To identify patterns of gene expression changes, we performed expression clustering of mashr significantly differentially expressed genes based on the blood transcriptome modules (BTM)using the GSVA software package.
+```{r coexpression,eval=FALSE}
+geneset <- read.gmt(file.path("/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/BTM_for_GSEA_20131008.gmt"))
+geneset <- read.gmt(file.path("/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/BTM_for_GSEA_20131008.gmt"))
+aa <- marshr.gene[[i]]
+aa$genes=aa$X
+aa.genes<- aa %>% arrange(desc(Day1.lfsr)) %>% dplyr::select(genes,Day1.lfsr)
+ranks<- deframe(aa.genes)
+BTM_list <- split(geneset$gene, geneset$term)
+fgseaRes<- fgsea(BTM_list, stats = ranks)
+
+saveRDS(BTM_list,"/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/BTM_list.rds")
+
+#GSVA
+topgene <- read.table(file="/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/all.sig.mashResults.gene.top25.csv",sep = ",",header=TRUE)
+all.gene.expr <-  as.matrix(rename_pbmc[["RNA"]]@data)
+part.gene.expr <-  as.matrix(rename_pbmc[["RNA"]]@data)[topgene[,2],]
+saveRDS(part.gene.expr,"/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/part.gene.expr")
+library(GSVA)
+part.gsvs.result <- GSVA::gsva(part.gene.expr, BTM_list,kcdf='Gaussian')
+library(dendextend)
+library(circlize)
+library(RColorBrewer)
+colors = colorRampPalette(rev(brewer.pal(n = 7, name ="RdYlBu")))(100)
+values <- seq(-0.8, 0.8, length.out = 101)[-101]
+col_fun = colorRamp2(values, colors)
+levels=c("Naïve B"," Intermediate B","Plasmablasts/Memrary B",
+          "Naïve CD4+ T cells","CD4+ Tcm","Treg",
+          "Naïve CD8+ T cells","CD8+ Tem","MAIT","NK/NKT",
+          "CD14+ Mono","CD16+ Mono","Plasmacytoid DC")
+c13 <- c("#A6CEE3" ,"#1F78B4", "#B2DF8A", "#33A02C" ,"#FB9A99" ,"#FDBF6F" ,"#FF7F00" ,"#CAB2D6" ,"#6A3D9A", "#FFFF99", "#B15928", "#66C2A5" ,"#FC8D62")
+names(c13) <- levels
+color_match <- c("Naïve B" = "#A6CEE3", "Intermediate B" = "#1F78B4","Plasmablasts/Memrary B"="#B2DF8A","Naïve CD4+ T cells"="#33A02C","CD4+ Tcm"="#FB9A99","Treg"="#FDBF6F","Naïve CD8+ T cells"="#FF7F00","CD8+ Tem"="#CAB2D6","MAIT"= "#6A3D9A","NK/NKT"="#FFFF99","CD14+ Mono"="#B15928","CD16+ Mono"="#66C2A5","Plasmacytoid DC"="#FC8D62")
+all.meta <- rename_pbmc@meta.data
+test_meta <- all.meta[1:5000,]
+annotation_data <- test_meta
+#colnames(annotation_data) <- "cellType"
+
+library(ComplexHeatmap)
+top_annotation <- HeatmapAnnotation(df = annotation_data$celltype,
+ col = list(Type = color_match))
+ 
+top_anno <- HeatmapAnnotation(cluster = anno_block(gp = gpar(fill = c13),
+labels = levels(annotation_data$celltype),
+                    labels_gp = gpar(cex = 0.5, col = "white")))
+
+Heatmap(test.gsvs.result, name = "GSVA", col = col_fun,cluster_rows = T,cluster_columns = F,show_row_names = T,
+        show_column_names = F,top_annotation = top_annotation,column_split = annotation_data$celltype)
+
+Heatmap(test.gsvs.result,col = col_fun,
+        cluster_rows = T,
+        cluster_columns = T,
+        show_column_names = F,
+        show_row_names = T,
+        column_split = annotation_data$celltype,
+		top_annotation = top_anno, 
+        column_title = NULL )
+
+Heatmap(test.gsvs.result,
+        cluster_rows = T,
+        cluster_columns = T,
+        show_column_names = FALSE,
+        show_row_names = FALSE,
+        column_split = annotation_data$celltype)
+
+
+#subset
+sub.gene.expr <-  as.matrix(sub_pbmc[["RNA"]]@data)[topgene[,2],]
+saveRDS(sub.gene.expr,"/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/sub.gene.expr.rds")
+library(GSVA)
+sub.gsvs.result <- GSVA::gsva(sub.gene.expr, BTM_list,kcdf='Gaussian')
+library(dendextend)
+library(circlize)
+library(RColorBrewer)
+colors = colorRampPalette(rev(brewer.pal(n = 7, name ="RdYlBu")))(100)
+values <- seq(-0.8, 0.8, length.out = 101)[-101]
+col_fun = colorRamp2(values, colors)
+levels=c("Naïve B"," Intermediate B","Plasmablasts/Memrary B",
+          "Naïve CD4+ T cells","CD4+ Tcm","Treg",
+          "Naïve CD8+ T cells","CD8+ Tem","MAIT","NK/NKT",
+          "CD14+ Mono","CD16+ Mono","Plasmacytoid DC")
+c13 <- c("#A6CEE3" ,"#1F78B4", "#B2DF8A", "#33A02C" ,"#FB9A99" ,"#FDBF6F" ,"#FF7F00" ,"#CAB2D6" ,"#6A3D9A", "#FFFF99", "#B15928", "#66C2A5" ,"#FC8D62")
+names(c13) <- levels
+color_match <- c("Naïve B" = "#A6CEE3", "Intermediate B" = "#1F78B4","Plasmablasts/Memrary B"="#B2DF8A","Naïve CD4+ T cells"="#33A02C","CD4+ Tcm"="#FB9A99","Treg"="#FDBF6F","Naïve CD8+ T cells"="#FF7F00","CD8+ Tem"="#CAB2D6","MAIT"= "#6A3D9A","NK/NKT"="#FFFF99","CD14+ Mono"="#B15928","CD16+ Mono"="#66C2A5","Plasmacytoid DC"="#FC8D62")
+sub.meta <- sub_pbmc@meta.data
+
+annotation_data <- sub_meta
+#colnames(annotation_data) <- "cellType"
+
+library(ComplexHeatmap)
+top_annotation <- HeatmapAnnotation(df = annotation_data$celltype,
+ col = list(Type = color_match))
+ 
+top_anno <- HeatmapAnnotation(cluster = anno_block(gp = gpar(fill = c13),
+labels = levels(annotation_data$celltype),
+                    labels_gp = gpar(cex = 0.5, col = "white")))
+
+Heatmap(sub.gsvs.result, name = "GSVA", col = col_fun,cluster_rows = T,cluster_columns = F,show_row_names = T,
+        show_column_names = F,top_annotation = top_annotation,column_split = annotation_data$celltype)
+		
+Heatmap(sub.gsvs.result,
+        cluster_rows = T,
+        cluster_columns = T,
+        show_column_names = FALSE,
+        show_row_names = FALSE,
+        column_split = annotation_data$celltype)
+		
+Heatmap(sub.gsvs.result,col = col_fun,
+        cluster_rows = T,
+        cluster_columns = T,
+        show_column_names = F,
+        show_row_names = T,
+        column_split = annotation_data$celltype,
+		top_annotation = top_anno, 
+        column_title = NULL )
+```
+
+
+##  Peak-to-gene links
+We performed an association analysis between peak accessibility and gene expression in the transcriptome to identify potential regulatory relationships.
+
+```{r p2g,eval=FALSE}
+##Co-accessibility
+motif_archr <- addCoAccessibility(ArchRProj = motif_archr,reducedDims = "LSI_Combined")
+cA <- getCoAccessibility(ArchRProj = motif_archr ,corCutOff = 0.5, resolution = 1,returnLoops = TRUE)
+saveRDS(motif_archr,"/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/5.30.Archr_down.RDS",compress = F)
+save(motif_archr,markersGE , markersPeaks,archrproj,motifPositions,cA, file = "/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/6.14.archr_motif.RData")
+archrproj <- addPeak2GeneLinks(ArchRProj = archrproj,reducedDims = "LSI_Combined",useMatrix = "GeneExpressionMatrix")
+archrproj$celltype <- factor(archrproj$celltype,levels = level)
+p2g <- getPeak2GeneLinks(ArchRProj = archrproj,corCutOff = 0.45,resolution = 1,returnLoops = FALSE)
+metadata(p2g)[[1]]
+
+saveRDS(archrproj,"/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/5.25.Peak2Gene.RDS",compress = F)
+pd <- paletteDiscrete(archrproj$celltype)
+c13 <- c("#A6CEE3" ,"#1F78B4", "#B2DF8A", "#33A02C" ,"#FB9A99" ,"#FDBF6F" ,"#FF7F00" ,"#CAB2D6" ,"#6A3D9A", "#FFFF99", "#B15928", "#66C2A5" ,"#FC8D62")
+names(c13) <- names(pd)
+plotPeak2GeneHeatmap(ArchRProj = archrproj, groupBy = "celltype",palGroup = c13,palRNA= paletteer_c("grDevices::TealRose", 30))
+p2gmatrix <- plotPeak2GeneHeatmap(ArchRProj = archrproj, groupBy = "celltype",returnMatrices = TRUE,nPlot = 70000,palRNA= paletteer_c("grDevices::TealRose", 30))
+p2gmatrix_byp <- plotPeak2GeneHeatmap(ArchRProj = archrproj, groupBy = "Participants",returnMatrices = TRUE,nPlot = 50000,palGroup = c13,palRNA= paletteer_c("grDevices::TealRose", 30))
+plotPeak2GeneHeatmap(ArchRProj = archrproj, groupBy = "Participants",nPlot = 50000,palGroup = c13,palRNA= paletteer_c("grDevices::TealRose", 30))
+
+p2g$geneName <- mcols(metadata(p2g)$geneSet)$name[p2g$idxRNA]
+p2g$peakName <- (metadata(p2g)$peakSet %>% {paste0(seqnames(.), "_", start(.), "_", end(.))})[p2g$idxATAC]
+p2g.df.null <- as.data.frame(p2g)
+hist(p2g.df.null$Correlation,col = "lightblue",main = "Histogram of peak-to-gene correlations",xlab = "Correlation")
+hist(p2g.df.null$FDR,col="lightblue",main = "Histogram peak-to-gene FDR",xlab = "FDR")
+hist(table(p2g.df.null$idxRNA),main="Distribution of peaks per gene",xlab = "Number of peaks per gene")
+hist(table(p2g.df.null$idxATAC),main="Distribution of gene per peaks",xlab = "Number of gene per peaks")
+mean(table(p2g.df.null$idxRNA))
+mean(table(p2g.df.null$idxATAC))
+p2g.df.null$kmeans <- p2gmatrix$RNA$kmeansId
+
+```
+
+To identify participant-specific and cell type-specific peak-to-gene correlations, we subset the dataset to include only the participants with barcodes of interest and recomputed the peak-to-gene links.
+```{r p2g_participant,eval=FALSE}
+##participants specific p2g
+library(ChIPpeakAnno)
+library(stats)
+
+P1_cells<-archrproj@cellColData[archrproj$Participants=="P1",]
+P1_cells <- as.data.frame(P1_cells)
+P1_cells <- rownames(P1_cells)
+proj_P1 <- subsetArchRProject(motif_archr,cells = P1_cells,outputDirectory = "/database/wangrong/Results/0712_ATAC+RNA/ArchR/P1")
+proj_P1 <- addPeak2GeneLinks(ArchRProj = proj_P1,reducedDims = "LSI_Combined",useMatrix = "GeneExpressionMatrix")
+plotPeak2GeneHeatmap(ArchRProj = proj_P1, groupBy = "celltype",palGroup = c13,palRNA= paletteer_c("grDevices::TealRose", 30))
+p2g_p1 <- getPeak2GeneLinks(ArchRProj = proj_P1,corCutOff = 0.45,resolution = 1,returnLoops = FALSE)
+p2g_p1$geneName <- mcols(metadata(p2g_p1)$geneSet)$name[p2g_p1$idxRNA]
+p2g_p1$peakName <- (metadata(p2g_p1)$peakSet %>% {paste0(seqnames(.), "_", start(.), "_", end(.))})[p2g_p1$idxATAC]
+p2g_p1.df <- as.data.frame(p2g_p1)
+p2g.df.null$paired_id <- paste0(p2g.df.null$peakName,p2g.df.null$geneName)
+p2g_p1.df$paired_id <- paste0(p2g_p1.df$peakName,p2g_p1.df$geneName)
+length(intersect(p2g_p1.df$paired_id,p2g.df.null$paired_id))
+#31230
+P2_cells<-archrproj@cellColData[archrproj$Participants=="P2",]
+P2_cells <- as.data.frame(P2_cells)
+P2_cells <- rownames(P2_cells)
+proj_P2 <- subsetArchRProject(motif_archr,cells = P2_cells,outputDirectory = "/database/wangrong/Results/0712_ATAC+RNA/ArchR/P2")
+proj_P2 <- addPeak2GeneLinks(ArchRProj = proj_P2,reducedDims = "LSI_Combined",useMatrix = "GeneExpressionMatrix")
+plotPeak2GeneHeatmap(ArchRProj = proj_P2, groupBy = "celltype",palGroup = c13,palRNA= paletteer_c("grDevices::TealRose", 30))
+p2g_p2 <- getPeak2GeneLinks(ArchRProj = proj_P2,corCutOff = 0.45,resolution = 1,returnLoops = FALSE)
+p2g_p2$geneName <- mcols(metadata(p2g_p2)$geneSet)$name[p2g_p2$idxRNA]
+p2g_p2$peakName <- (metadata(p2g_p2)$peakSet %>% {paste0(seqnames(.), "_", start(.), "_", end(.))})[p2g_p2$idxATAC]
+p2g_p2.df <- as.data.frame(p2g_p2)
+p2g_p2.df$paired_id <- paste0(p2g_p2.df$peakName,p2g_p2.df$geneName)
+length(intersect(p2g_p2.df$paired_id,p2g.df.null$paired_id))
+#33255
+P3_cells<-archrproj@cellColData[archrproj$Participants=="P3",]
+P3_cells <- as.data.frame(P3_cells)
+P3_cells <- rownames(P3_cells)
+proj_P3 <- subsetArchRProject(motif_archr,cells = P3_cells,outputDirectory = "/database/wangrong/Results/0712_ATAC+RNA/ArchR/P3",force = TRUE)
+proj_P3 <- addPeak2GeneLinks(ArchRProj = proj_P3,reducedDims = "LSI_Combined",useMatrix = "GeneExpressionMatrix")
+plotPeak2GeneHeatmap(ArchRProj = proj_P3, groupBy = "celltype",palGroup = c13,palRNA= paletteer_c("grDevices::TealRose", 30))
+p2g_p3 <- getPeak2GeneLinks(ArchRProj = proj_P3,corCutOff = 0.45,resolution = 1,returnLoops = FALSE)
+p2g_p3$geneName <- mcols(metadata(p2g_p3)$geneSet)$name[p2g_p3$idxRNA]
+p2g_p3$peakName <- (metadata(p2g_p3)$peakSet %>% {paste0(seqnames(.), "_", start(.), "_", end(.))})[p2g_p3$idxATAC]
+p2g_p3.df <- as.data.frame(p2g_p3)
+p2g_p3.df$paired_id <- paste0(p2g_p3.df$peakName,p2g_p3.df$geneName)
+length(intersect(p2g_p3.df$paired_id,p2g.df.null$paired_id))
+#31461
+P4_cells<-archrproj@cellColData[archrproj$Participants=="P4",]
+P4_cells <- as.data.frame(P4_cells)
+P4_cells <- rownames(P4_cells)
+proj_P4 <- subsetArchRProject(motif_archr,cells = P4_cells,outputDirectory = "/database/wangrong/Results/0712_ATAC+RNA/ArchR/P4",force = TRUE)
+proj_P4 <- addPeak2GeneLinks(ArchRProj = proj_P4,reducedDims = "LSI_Combined",useMatrix = "GeneExpressionMatrix")
+plotPeak2GeneHeatmap(ArchRProj = proj_P4, groupBy = "celltype",palGroup = c13,palRNA= paletteer_c("grDevices::TealRose", 30))
+p2g_p4 <- getPeak2GeneLinks(ArchRProj = proj_P4,corCutOff = 0.45,resolution = 1,returnLoops = FALSE)
+p2g_p4$geneName <- mcols(metadata(p2g_p4)$geneSet)$name[p2g_p4$idxRNA]
+p2g_p4$peakName <- (metadata(p2g_p4)$peakSet %>% {paste0(seqnames(.), "_", start(.), "_", end(.))})[p2g_p4$idxATAC]
+p2g_p4.df <- as.data.frame(p2g_p4)
+p2g_p4.df$paired_id <- paste0(p2g_p4.df$peakName,p2g_p4.df$geneName)
+length(intersect(p2g_p4.df$paired_id,p2g.df.null$paired_id))
+#38068
+#韦恩图
+library(VennDiagram)
+library(RColorBrewer)
+venn_ploy <-venn.diagram(x = list(all_Participants = p2g.df.null$paired_id,P1 = p2g_p1.df$paired_id,P2 = p2g_p2.df$paired_id,P3 = p2g_p3.df$paired_id,P4 = p2g_p4.df$paired_id),filename = "/home/wangrong/results/6.20.P2g.venn.tiff",fill = brewer.pal(5, "Pastel2"))
+save(proj_P1,proj_P2,proj_P3,proj_P4,archrproj,file = "/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/6.20.archr_p2g.RData")
+
+##top p2g in intersect group
+co_p2g<- Reduce(intersect, list(p2g.df.null$paired_id,p2g_p1.df$paired_id,p2g_p2.df$paired_id,p2g_p3.df$paired_id,p2g_p4.df$paired_id))
+co_p2g_df <- p2g.df.null[!is.na(match(p2g.df.null$paired_id,co_p2g)),]
+number_p <- as.data.frame(table(co_p2g_df$geneName))
+mean(table(co_p2g_df$idxRNA))#6.584461
+number_p <- number_p[number_p$Freq>=7,]
+co_p2g_df_filter <- co_p2g_df[which(co_p2g_df$geneName %in% number_p$Var1),]
+co_p2g_df_arrange <- arrange(co_p2g_df_filter,desc(co_p2g_df_filter$Correlation))
+write_csv(co_p2g_df_arrange,file="/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/6.20_co_p2g_df_arrange.csv")
+co_GO <- bitr(unique(co_p2g_df_arrange$geneName[1:186]), fromType = "SYMBOL",toType = c( "ENTREZID"),OrgDb="org.Hs.eg.db")
+GO_df <- enrichGO(co_GO$ENTREZID,OrgDb = org.Hs.eg.db,ont = "all",pAdjustMethod = "none", pvalueCutoff = 0.05,readable =T)
+-log(p.adjust)
+dotplot(GO_df, showCategory = 15)+scale_color_gradient(low = '#008B8B', high ='#FFF8DC' )
+GO_data <- GO_df@result[1:15,]
+
+ggplot(GO_data,aes(x = Count, y =reorder(Description,Count)))+ 
+  geom_point(aes(size=Count,color=-log10(p.adjust)))+
+  scale_colour_gradient(low='#FFF8DC',high='#008B8B')+
+  labs(color=expression(-log10(p.adjust)),
+    size=" Count Number",x="Gene Count")+theme_bw()+
+  theme(axis.text.y = element_text(size = rel(1.5)),
+    axis.title.x = element_text(size=rel(1.5)),
+    axis.title.y = element_blank()
+  )+ scale_size(range=c(5, 10))
+
+##散点图 number of enhance 和correlation
+mc <- tapply(co_p2g_df_filter$Correlation,co_p2g_df_filter$geneName, median)
+np <- as.data.frame(table(co_p2g_df_filter$geneName))
+np$Correlation <- mc
+mean(np$Correlation)
+#[1] 0.6709494
+np1 <- np[np$Correlation>0.8,]
+np2 <- np1[np1$Freq>10,]
+np2$group <- "sig"
+np2$gene <- np2$Var1
+np_g <- merge(np,np2,all.x = TRUE)
+np_g[is.na(np_g)] <-  "non_sig"
+
+
+ggplot(np_g, aes(x = Freq, y = Correlation)) +geom_point(aes(colour = group,))+
+       scale_color_manual(values=c("non_sig" = "#80B1D3","sig" = "#FB8072"))+
+       geom_vline(xintercept=10,lty=2,col="black",lwd=1) +
+       theme(legend.background=element_blank(), legend.key=element_blank(),
+                         legend.title = element_blank(),
+                         panel.grid.major = element_blank(),panel.grid.minor = element_blank())+theme_bw()+
+       ggrepel::geom_text_repel(
+             aes(label=gene,color=group),np_g,
+             size = 4, #注释文本的字体大小
+             box.padding = 0.5, #字到点的距离
+             point.padding = 0.8, #字到点的距离，点周围的空白宽度
+             min.segment.length = 0.5, #短线段可以省略
+             segment.color = "black", #显示线段
+            show.legend = F)
+top_gene <- c("PID1","VCAN","IL1B","IL1A","RBM47","FCAR","TLR2","CLEC7A","SLC8A1")
+p <- plotBrowserTrack(ArchRProj = archrproj, groupBy = "celltype", geneSymbol = top_gene, upstream = 50000,downstream = 50000,
+  loops = getPeak2GeneLinks(archrproj))
+grid::grid.draw(p$IL1B)
+
+p_p <- plotBrowserTrack(ArchRProj = archrproj, groupBy = "Participants", geneSymbol = top_gene, upstream = 50000,downstream = 50000,
+                        loops = getPeak2GeneLinks(archrproj))
+
+grid::grid.draw(p_p$IL1B)
+```

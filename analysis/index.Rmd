@@ -8,4 +8,10 @@ editor_options:
   chunk_output_type: console
 ---
 
-Welcome to my research website.
+Welcome to our research website.
+
+This study analyzed a multiomics single-nucleus data at 10 timepoints after SARS-CoV-2 inactivated vaccination
+
+vaccine :BBIBP-CorV, was manufactured by Sinopharm China National Biotec Group (CNBG)
+
+participants: The study included 4 participants,between the ages of 30-60.Participants in this study were recruited from Affiliated Hospital of Yunnan University and  they were healthy male who were free of SARS-CoV-2 infection. Recruitment and vaccinations were done between Feb 7, 2021 and July 28,2021.

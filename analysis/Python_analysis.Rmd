@@ -1,0 +1,717 @@
+---
+title: "Python analysis"
+author: "wangrong"
+date: "2024/1/10"
+output: workflowr::wflow_html
+code_folding: hide
+editor_options:
+  
+  chunk_output_type: console
+---
+
+```{r setup, echo=FALSE,eval=FALSE}
+knitr::opts_chunk$set(message=FALSE, error=FALSE, warning=FALSE)
+library(knitr)
+library(rmarkdown)
+```
+
+##  eGRN analysis
+We followed the SCENIC+ workflow. the gene expression matrix after quality control was directly used for the transcriptome. We preprocessed the snATAC-seq part of the multiome dataset using pycisTopic.
+```{python cistopic,eval=FALSE}
+import pandas as pd
+cell_data=pd.read_csv('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/rna_metadata/2.16.metadata.csv', na_values='NAN',infer_datetime_format=True,index_col="idbarcode")
+cell_data['celltype'] = cell_data['celltype'].astype(str)
+cell_data
+print(cell_data["celltype"].value_counts())
+
+import os
+import pycisTopic
+%matplotlib inline
+
+work_dir = '/database/huangdingli/0712_ATAC+RNA/'
+fragments_dict = {'M1-1': os.path.join(work_dir, 'M1-1/outs/atac_fragments.tsv.gz'),
+                  'M1-2': os.path.join(work_dir, 'M1-2/outs/atac_fragments.tsv.gz'),
+                  'M1-3': os.path.join(work_dir, 'M1-3/outs/atac_fragments.tsv.gz'),
+                  'M1-4': os.path.join(work_dir, 'M1-4/outs/atac_fragments.tsv.gz'),
+                  'M1-5': os.path.join(work_dir, 'M1-5/outs/atac_fragments.tsv.gz'),
+                  'M1-6': os.path.join(work_dir, 'M1-6/outs/atac_fragments.tsv.gz'),
+                  'M1-7': os.path.join(work_dir, 'M1-7/outs/atac_fragments.tsv.gz'),
+                  'M1-8': os.path.join(work_dir, 'M1-8/outs/atac_fragments.tsv.gz'),
+                  'M1-9': os.path.join(work_dir, 'M1-9/outs/atac_fragments.tsv.gz'),
+                  'M1-10': os.path.join(work_dir, 'M1-10/outs/atac_fragments.tsv.gz'),
+                  'M2-1': os.path.join(work_dir, 'M2-1/outs/atac_fragments.tsv.gz'),
+                  'M2-4': os.path.join(work_dir, 'M2-4/outs/atac_fragments.tsv.gz'),
+                  'M2-5': os.path.join(work_dir, 'M2-5/outs/atac_fragments.tsv.gz'),
+                  'M2-6': os.path.join(work_dir, 'M2-6/outs/atac_fragments.tsv.gz'),
+                  'M2-7': os.path.join(work_dir, 'M2-7/outs/atac_fragments.tsv.gz'),
+                  'M2-8': os.path.join(work_dir, 'M2-8/outs/atac_fragments.tsv.gz'),
+                  'M2-9': os.path.join(work_dir, 'M2-9/outs/atac_fragments.tsv.gz'),
+                  'M2-10': os.path.join(work_dir, 'M2-10/outs/atac_fragments.tsv.gz'),
+                  'M3-1': os.path.join(work_dir, 'M3-1/outs/atac_fragments.tsv.gz'),
+                  'M3-2': os.path.join(work_dir, 'M3-2/outs/atac_fragments.tsv.gz'),
+                  'M3-3': os.path.join(work_dir, 'M3-3/outs/atac_fragments.tsv.gz'),
+                  'M3-4': os.path.join(work_dir, 'M3-4/outs/atac_fragments.tsv.gz'),
+                  'M3-5': os.path.join(work_dir, 'M3-5/outs/atac_fragments.tsv.gz'),
+                  'M3-6': os.path.join(work_dir, 'M3-6/outs/atac_fragments.tsv.gz'),
+                  'M3-7': os.path.join(work_dir, 'M3-7/outs/atac_fragments.tsv.gz'),
+                  'M3-8': os.path.join(work_dir, 'M3-8/outs/atac_fragments.tsv.gz'),
+                  'M3-9': os.path.join(work_dir, 'M3-9/outs/atac_fragments.tsv.gz'),
+                  'M3-10': os.path.join(work_dir, 'M3-10/outs/atac_fragments.tsv.gz'),
+                  'M5-1': os.path.join(work_dir, 'M5-1/outs/atac_fragments.tsv.gz'),
+                  'M5-2': os.path.join(work_dir, 'M5-2/outs/atac_fragments.tsv.gz'),
+                  'M5-3': os.path.join(work_dir, 'M5-3/outs/atac_fragments.tsv.gz'),
+                  'M5-4': os.path.join(work_dir, 'M5-4/outs/atac_fragments.tsv.gz'),
+                  'M5-5': os.path.join(work_dir, 'M5-5/outs/atac_fragments.tsv.gz'),
+                  'M5-6': os.path.join(work_dir, 'M5-6/outs/atac_fragments.tsv.gz'),
+                  'M5-7': os.path.join(work_dir, 'M5-7/outs/atac_fragments.tsv.gz'),
+                  'M5-8': os.path.join(work_dir, 'M5-8/outs/atac_fragments.tsv.gz'),
+                  'M5-9': os.path.join(work_dir, 'M5-9/outs/atac_fragments.tsv.gz'),
+                  'M5-10': os.path.join(work_dir, 'M5-10/outs/atac_fragments.tsv.gz')}
+
+
+import pyranges as pr
+import requests
+import pandas as pd
+
+target_url='http://hgdownload.cse.ucsc.edu/goldenPath/hg38/bigZips/hg38.chrom.sizes'
+chromsizes=pd.read_csv(target_url, sep='\t', header=None)
+chromsizes.columns=['Chromosome', 'End']
+chromsizes['Start']=[0]*chromsizes.shape[0]
+chromsizes=chromsizes.loc[:,['Chromosome', 'Start', 'End']]
+# Exceptionally in this case, to agree with CellRangerARC annotations
+chromsizes['Chromosome'] = [chromsizes['Chromosome'][x].replace('v', '.') for x in range(len(chromsizes['Chromosome']))]
+chromsizes['Chromosome'] = [chromsizes['Chromosome'][x].split('_')[1] if len(chromsizes['Chromosome'][x].split('_')) > 1 else chromsizes['Chromosome'][x] for x in range(len(chromsizes['Chromosome']))]
+chromsizes=pr.PyRanges(chromsizes)
+
+import ray
+ray.shutdown()
+ray.init(_temp_dir = '/DATA1/wangrong/temp/ray_spill/')
+
+from pycisTopic.pseudobulk_peak_calling import export_pseudobulk
+bw_paths, bed_paths = export_pseudobulk(input_data = cell_data,
+                 variable = 'celltype',
+                 sample_id_col = 'sample_id',             
+                 chromsizes = chromsizes,
+                 bed_path = '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/38_pseudobulk_bed_files/',
+                 bigwig_path = '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/38_pseudobulk_bw_files/',
+                 path_to_fragments = fragments_dict,
+                 n_cpu = 64,  
+                 normalize_bigwig = True,
+                 remove_duplicates = True,
+                 _temp_dir = '/DATA1/wangrong/temp/ray_spill/',
+                 split_pattern = '___',
+                 ignore_reinit_error = True)           
+
+import pickle
+
+with open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/38_pseudobulk_bed_files/bed_paths.pkl', 'wb') as f:
+  pickle.dump(bed_paths, f)
+with open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/38_pseudobulk_bed_files/bw_paths.pkl', 'wb') as f:
+  pickle.dump(bw_paths, f)
+  
+bed_paths = pickle.load(open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/38_pseudobulk_bed_files/bed_paths.pkl', 'rb'))
+bw_paths =  pickle.load(open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/38_pseudobulk_bed_files/bw_paths.pkl', 'rb'))
+
+from pycisTopic.pseudobulk_peak_calling import peak_calling
+macs_path = 'macs2'
+# Run peak calling
+narrow_peaks_dict = peak_calling(macs_path,
+                                 bed_paths,
+                                 os.path.join('/database/huhuajie/Results/scATAC/consensus_peak_calling/MACS/'),
+                                 genome_size='hs',
+                                 n_cpu=64,
+                                 input_format='BEDPE',
+                                 shift=73,
+                                 ext_size=146,
+                                 keep_dup = 'all',
+                                 q_value = 0.05,
+                                 _temp_dir = '/DATA1/wangrong/temp/ray_spill/',
+                                 ignore_reinit_error = True)
+
+with open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/MACS/narrow_peaks_dict.pkl', 'wb') as f:
+  pickle.dump(narrow_peaks_dict, f)
+  
+  
+import pickle
+narrow_peaks_dict =  pickle.load(open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/MACS/narrow_peaks_dict.pkl', 'rb'))
+
+from pycisTopic.iterative_peak_calling import *
+# Other param
+peak_half_width = 250
+path_to_blacklist = '/jupyter/huhuajie/Data/blacklist/hg38-blacklist.v2.bed'
+# Get consensus peaks
+consensus_peaks = get_consensus_peaks(narrow_peaks_dict, peak_half_width, chromsizes=chromsizes, path_to_blacklist=path_to_blacklist)
+
+# Write to bed
+consensus_peaks.to_bed(
+    path = '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+    keep=True,
+    compression='infer',
+    chain=False)
+
+import pybiomart as pbm
+
+dataset = pbm.Dataset(name='hsapiens_gene_ensembl',  host='http://www.ensembl.org')
+annot = dataset.query(attributes=['chromosome_name', 'transcription_start_site', 'strand', 'external_gene_name', 'transcript_biotype'])
+annot['Chromosome/scaffold name'] = annot['Chromosome/scaffold name'].to_numpy(dtype = str)
+filter = annot['Chromosome/scaffold name'].str.contains('CHR|GL|JH|MT')
+annot = annot[~filter]
+annot['Chromosome/scaffold name'] = annot['Chromosome/scaffold name'].str.replace(r'(\b\S)', r'chr\1')
+annot.columns=['Chromosome', 'Start', 'Strand', 'Gene', 'Transcript_type']
+annot = annot[annot.Transcript_type == 'protein_coding']
+
+#import ray
+#ray.shutdown()
+#ray.init(_temp_dir = '/database/temp/ray_spill/')
+
+from pycisTopic.qc import *
+## Set regions. We will use the consensus peaks we have just called, but we could also use the bulk peaks per sample instead for this step
+path_to_regions= {'M1-1': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M1-2': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M1-3': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M1-4': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M1-5': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M1-6': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M1-7': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M1-8': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M1-9': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M1-10': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M2-1': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M2-4': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M2-5': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M2-6': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M2-7': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M2-8': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M2-9': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M2-10': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M3-1': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M3-2': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M3-3': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M3-4': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M3-5': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M3-6': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M3-7': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M3-8': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M3-9': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M3-10': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M5-1': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M5-2': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M5-3': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M5-4': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M5-5': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M5-6': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M5-7': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M5-8': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M5-9': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed',
+                  'M5-10': '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed'}
+metadata_bc, profile_data_dict = compute_qc_stats(
+                fragments_dict = fragments_dict,
+                tss_annotation = annot,
+                stats=['barcode_rank_plot', 'duplicate_rate', 'insert_size_distribution', 'profile_tss', 'frip'],
+                label_list = None,
+                path_to_regions = path_to_regions,
+                n_cpu = 4,
+                valid_bc = None,
+                n_frag = 100,
+                n_bc = None,
+                tss_flank_window = 1000,
+                tss_window = 50,
+                tss_minimum_signal_window = 100,
+                tss_rolling_window = 10,
+                remove_duplicates = True,
+                _temp_dir = '/DATA1/wangrong/temp/ray_spill/',
+                ignore_reinit_error = True)
+
+if not os.path.exists('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control'):
+    os.makedirs('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control')
+
+pickle.dump(metadata_bc,
+            open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control/38_metadata_bc.pkl', 'wb'))
+pickle.dump(profile_data_dict,
+            open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control/38_profile_data_dict.pkl', 'wb'))
+			
+from pycisTopic.qc import *
+plot_sample_metrics(profile_data_dict,
+           insert_size_distribution_xlim=[0,600],
+           ncol=5,
+           plot=True,
+           save= '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control/sample_metrics.pdf',
+           duplicate_rate_as_hexbin = True)
+
+
+FRIP_NR_FRAG_fig = {}
+FRIP_NR_FRAG_filter = {}
+TSS_NR_FRAG_fig = {}
+TSS_NR_FRAG_filter = {}
+DR_NR_FRAG_fig = {}
+
+QC_filters = {
+    'Log_unique_nr_frag': [3.3 , None],
+    'FRIP':               [0.45, None],
+    'TSS_enrichment':     [5   , None],
+    'Dupl_rate':          [None, None]
+}
+
+for sample in metadata_bc.keys():
+    FRIP_NR_FRAG_fig[sample], FRIP_NR_FRAG_filter[sample]=plot_barcode_metrics(metadata_bc[sample],
+                                           var_x='Log_unique_nr_frag',
+                                           var_y='FRIP',
+                                           min_x=QC_filters['Log_unique_nr_frag'][0],
+                                           max_x=QC_filters['Log_unique_nr_frag'][1],
+                                           min_y=QC_filters['FRIP'][0],
+                                           max_y=QC_filters['FRIP'][1],
+                                           return_cells=True,
+                                           return_fig=True,
+                                           plot=False,
+                                           save= '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control/barcode_metrics_FRIP-VS-NRFRAG_'+sample+'.pdf')
+    # Return figure to plot together with other metrics, and cells passing filters
+    TSS_NR_FRAG_fig[sample], TSS_NR_FRAG_filter[sample]=plot_barcode_metrics(metadata_bc[sample],
+                                          var_x='Log_unique_nr_frag',
+                                          var_y='TSS_enrichment',
+                                          min_x=QC_filters['Log_unique_nr_frag'][0],
+                                          max_x=QC_filters['Log_unique_nr_frag'][1],
+                                          min_y=QC_filters['TSS_enrichment'][0],
+                                          max_y=QC_filters['TSS_enrichment'][1],
+                                          return_cells=True,
+                                          return_fig=True,
+                                          plot=False,
+                                          save= '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control/barcode_metrics_TSS-VS-NRFRAG_'+sample+'.pdf')
+    # Return figure to plot together with other metrics, but not returning cells (no filter applied for the duplication rate  per barcode)
+    DR_NR_FRAG_fig[sample]=plot_barcode_metrics(metadata_bc[sample],
+                                          var_x='Log_unique_nr_frag',
+                                          var_y='Dupl_rate',
+                                          min_x=QC_filters['Log_unique_nr_frag'][0],
+                                          max_x=QC_filters['Log_unique_nr_frag'][1],
+                                          min_y=QC_filters['Dupl_rate'][0],
+                                          max_y=QC_filters['Dupl_rate'][1],
+                                          return_cells=False,
+                                          return_fig=True,
+                                          plot=False,
+                                          plot_as_hexbin = True)
+
+
+
+# Plot barcode stats in one figure
+fig=plt.figure(figsize=(40, 30))
+i=1
+for sample in FRIP_NR_FRAG_fig.keys():
+    plt.subplot(38, 3, i)
+    plt.gca().set_title(sample, fontsize=20)
+    i += 1
+    img = fig2img(FRIP_NR_FRAG_fig[sample]) #To convert figures to png to plot together, see .utils.py. This converts the figure to png.
+    plt.imshow(img)
+    plt.axis('off')
+    plt.subplot(38, 3, i)
+    plt.gca().set_title(sample, fontsize=20)
+    i += 1
+    img = fig2img(TSS_NR_FRAG_fig[sample])
+    plt.imshow(img)
+    plt.axis('off')
+    plt.subplot(38, 3, i)
+    plt.gca().set_title(sample, fontsize=20)
+    i += 1
+    img = fig2img(DR_NR_FRAG_fig[sample])
+    plt.imshow(img)
+    plt.axis('off')
+plt.savefig('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control/combined_qc.pdf')
+
+import pickle
+
+bc_passing_filters = {}
+for sample in FRIP_NR_FRAG_filter.keys():
+    bc_passing_filters[sample] = list((set(FRIP_NR_FRAG_filter[sample]) & set(TSS_NR_FRAG_filter[sample])))
+    
+pickle.dump(bc_passing_filters,
+            open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control/bc_passing_filters.pkl', 'wb'))
+			
+			import pickle
+infile = open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control/38_metadata_bc.pkl', 'rb')
+metadata_bc = pickle.load(infile)
+infile.close()
+
+print(metadata_bc.keys())
+metadata_bc
+
+#cell_data['sample_id'] = [x.split('_')[0] for x in cell_data.index.tolist()]  # 增加sample_id列，标记样本
+# cell_data['barcode'] = [x.split('_')[1] for x in cell_data.index.tolist()]    # 增加barcode列，此处barcode要与fragments文件中barcode一致
+cell_data=pd.read_csv('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/rna_metadata/2.16.metadata.csv', na_values='NAN',infer_datetime_format=True,index_col="idbarcode")
+cell_data['celltype'] = cell_data['celltype'].astype(str)
+
+import pickle
+import os
+
+work_dir = '/database/huangdingli/0712_ATAC+RNA/'
+path_to_blacklist= '/jupyter/huhuajie/Data/blacklist/hg38-blacklist.v2.bed'
+
+from pycisTopic.cistopic_class import *
+cistopic_obj_list=[create_cistopic_object_from_fragments(
+                                                         path_to_fragments=fragments_dict[key],
+                                                         path_to_regions=path_to_regions[key],
+                                                         path_to_blacklist=path_to_blacklist,
+                                                         metrics=metadata_bc[key],
+                                                         valid_bc=bc_passing_filters[key],
+                                                         n_cpu=32,
+                                                         project=key,
+                                                         split_pattern='_') for key in fragments_dict.keys()]
+cistopic_obj = merge(cistopic_obj_list)
+cistopic_obj.add_cell_data(cell_data)
+print(cistopic_obj)
+import pickle
+pickle.dump(cistopic_obj,
+            open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/2.18.cistopic_obj.pkl', 'wb'))
+			
+import pickle
+cistopic_obj = pickle.load(open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/2.18.cistopic_obj.pkl', 'rb'))
+
+metadf=cistopic_obj.cell_data
+cleandf=metadf[metadf["id"].notna()]
+cleandf
+cellname=cleandf['idbarcode.1'].values.tolist()
+cistopic_obj_sub = cistopic_obj.subset(cells=cellname,copy=True)
+
+print(cistopic_obj_sub)
+cistopic_obj_sub.cell_data['sample_id']
+
+sub_df= cistopic_obj_sub.cell_data
+cistopic_obj_sub.add_cell_data(sub_df)
+cistopic_obj_sub
+cistopic_obj_sub.projections['cell']
+
+pickle.dump(cistopic_obj_sub,
+            open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/2.24.sub_cistopic_obj.pkl', 'wb'))
+			
+# sampling
+cistopic_obj_sub = pickle.load(open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/2.24.sub_cistopic_obj_harmony.pkl', 'rb'))
+sub_metadf=cistopic_obj_sub.cell_data
+seed=["1","2","3","4","5","6"]*38747
+sub_metadf=cistopic_obj_sub.cell_data
+import pandas as pd
+s = pd.Series(seed)
+s1 = pd.Series(seed,index=sub_metadf.index)
+sub_metadf["sampling"]=s1
+sampling_df=sub_metadf[sub_metadf["sampling"]=='1']
+cellname=sampling_df['idbarcode.1'].values.tolist()
+cistopic_obj_sampling = cistopic_obj_sub.subset(cells=cellname,copy=True)
+cistopic_obj_sampling.cell_data['sample_id']
+
+sub_df= cistopic_obj_sampling.cell_data
+cistopic_obj_sampling.add_cell_data(sub_df)
+cistopic_obj_sampling
+cistopic_obj_sampling.projections['cell']
+pickle.dump(cistopic_obj_sampling,
+            open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/3.23.cistopic_obj_sampling.pkl', 'wb'))
+			
+# Load models
+models = pickle.load(open('/DATA1/zhang_lab/tmp/model/3.23.muliti_model_sampling.pkl', 'rb'))
+from pycisTopic.lda_models import *
+model=evaluate_models(models,
+                     select_model=16,
+                     return_model=True,
+                     metrics=['Arun_2010','Cao_Juan_2009', 'Minmo_2011', 'loglikelihood'],
+                     plot_metrics=False,
+                     save= '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/models/3.23.model_selection.pdf')
+cistopic_obj_sampling.add_LDA_model(model)					 
+
+# Harmony
+harmony(cistopic_obj_sampling, 'sample_id', random_state=555)
+# UMAP
+run_umap(cistopic_obj_sampling, reduction_name='harmony_UMAP',
+                 target  = 'cell', harmony=True)
+pickle.dump(cistopic_obj_sampling,
+            open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/3.23.cistopic_obj_sampling_harmony.pkl', 'wb'))
+```
+
+In the second step, motif enrichment was performed using both the cisTarget and DEM algorithm on cell-type-based DARs.
+Due to the large number of cells and the heavy computational burden, 1/6 of the cells (38748) were sampled.
+```{python cisTarget,eval=FALSE}
+
+from pycisTopic.topic_binarization import *
+region_bin_topics_otsu = binarize_topics(cistopic_obj_sampling, method='otsu', plot=True, num_columns=5, save= '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/3.11.otsu.pdf')
+region_bin_topics_top3k = binarize_topics(cistopic_obj_sampling, method='ntop', ntop = 3000,plot=True, num_columns=5, save= '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/3.11.ntop.pdf')
+
+from pycisTopic.diff_features import *
+imputed_acc_obj = impute_accessibility(cistopic_obj_sampling, selected_cells=None, selected_regions=None, scale_factor=10**6)
+normalized_imputed_acc_obj = normalize_scores(imputed_acc_obj, scale_factor=10**4)
+variable_regions = find_highly_variable_features(normalized_imputed_acc_obj, plot = False)
+markers_dict = find_diff_features(cistopic_obj_sampling, imputed_acc_obj, variable='celltype', var_features=variable_regions, split_pattern = '-')
+
+rankings_db = '/database/wangrong/Reference/feather_database/hg38_screen_v10_clust.regions_vs_motifs.rankings.feather'
+scores_db =  '/database/wangrong/Reference/feather_database/hg38_screen_v10_clust.regions_vs_motifs.scores.feather'
+motif_annotation = '/database/wangrong/Reference/feather_database/anno/motifs-v10nr_clust-nr.hgnc-m0.001-o0.0.tbl'
+
+import pyranges as pr
+from pycistarget.utils import region_names_to_coordinates
+region_sets = {}
+region_sets['topics_otsu'] = {}
+region_sets['topics_top_3'] = {}
+region_sets['DARs'] = {}
+for topic in region_bin_topics_otsu.keys():
+    regions = region_bin_topics_otsu[topic].index[region_bin_topics_otsu[topic].index.str.startswith('chr')] #only keep regions on known chromosomes
+    region_sets['topics_otsu'][topic] = pr.PyRanges(region_names_to_coordinates(regions))
+for topic in region_bin_topics_top3k.keys():
+    regions = region_bin_topics_top3k[topic].index[region_bin_topics_top3k[topic].index.str.startswith('chr')] #only keep regions on known chromosomes
+    region_sets['topics_top_3'][topic] = pr.PyRanges(region_names_to_coordinates(regions))
+for DAR in markers_dict.keys():
+    regions = markers_dict[DAR].index[markers_dict[DAR].index.str.startswith('chr')] #only keep regions on known chromosomes
+    region_sets['DARs'][DAR] = pr.PyRanges(region_names_to_coordinates(regions))
+    
+    
+region_sets['DARs']['NK_NKT'] = region_sets['DARs'].pop('NK/NKT')
+region_sets['DARs']['Plasmablasts_Memory B'] = region_sets['DARs'].pop('Plasmablasts/Memory B')
+region_sets['DARs'].keys()
+
+from scenicplus.wrappers.run_pycistarget import run_pycistarget
+run_pycistarget(
+    region_sets = region_sets,
+    species = 'homo_sapiens',
+    save_path = os.path.join('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/motifs/new_sampling/'),
+    ctx_db_path = rankings_db,
+    dem_db_path = scores_db,
+    path_to_motif_annotations = motif_annotation,
+    run_without_promoters = True,
+    n_cpu = 8,
+    _temp_dir = '/DATA1/zhang_lab/tmp/',
+    annotation_version = 'v10nr_clust')
+	
+import pickle
+import dill
+import scanpy as sc
+import os
+import warnings
+warnings.filterwarnings("ignore")
+import pandas
+import pyranges
+# Set stderr to null to avoid strange messages from ray
+import sys
+_stderr = sys.stderr
+null = open(os.devnull,'wb')
+menr = dill.load(open( '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/motifs/new_sampling/menr.pkl', 'rb'))
+adata = sc.read_h5ad( '/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/RNA.h5ad')
+cistopic_obj_sampling=pickle.load(open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/3.24.cistopic_obj_sampling_harmony.pkl', 'rb'))
+
+adata.obs['barcode'] = [x.split('_')[1] for x in adata.obs.index.tolist()]
+adata.obs.index = adata.obs['barcode'] + '_' + adata.obs['orig.ident']+ '___' + adata.obs['orig.ident']
+adata.obs
+
+adata_sampling = adata[adata.obs.index.isin(cellname)]
+adata_sampling
+
+adata_sampling.raw = adata_sampling
+sc.pp.normalize_total(adata_sampling, target_sum=1e4)
+sc.pp.log1p(adata_sampling)
+sc.pp.highly_variable_genes(adata_sampling, min_mean=0.0125, max_mean=3, min_disp=0.5)
+adata_sampling = adata_sampling[:, adata_sampling.var.highly_variable]
+sc.pp.scale(adata_sampling, max_value=10)
+sc.tl.pca(adata_sampling, svd_solver='arpack')
+
+sc.pp.neighbors(adata_sampling, n_neighbors=10, n_pcs=40)
+sc.tl.umap(adata_sampling)
+sc.tl.leiden(adata_sampling)
+```
+
+Step three, a search space of a maximum between either the boundary of the closest gene or 150 kb and a minimum of 1 kb upstream of the TSS or downstream of the end of the gene was considered for calculating region–gene relationships using gradient-boosting machine regression.
+```{python eGRN,eval=FALSE}
+from scenicplus.scenicplus_class import create_SCENICPLUS_object
+import numpy as np
+scplus_obj_sampling = create_SCENICPLUS_object(
+    GEX_anndata = adata_sampling.raw.to_adata(),
+    cisTopic_obj = cistopic_obj_sampling,
+    menr = menr)
+	
+scplus_obj_sampling.X_EXP = np.array(scplus_obj_sampling.X_EXP.todense())
+scplus_obj_sampling
+pickle.dump(scplus_obj_sampling, open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/3.24.scplus_obj_sampling.pkl', 'wb'))
+
+del adata_sampling
+del cistopic_obj_sampling
+del adata
+del imputed_acc_obj
+del cistopic_obj_sub
+del models
+
+biomart_host = "http://sep2019.archive.ensembl.org/"
+
+from scenicplus.wrappers.run_scenicplus import run_scenicplus
+try:
+    run_scenicplus(
+        scplus_obj = scplus_obj_sampling,
+        variable = ['GEX_celltype'],
+        species = 'hsapiens',
+        assembly = 'hg38',
+        tf_file = '/database/wangrong/Reference/utoronto_human_tfs_v_1.01.txt',
+        save_path = '/database/wangrong/Results/0712_ATAC+RNA/SCENIC/scenicplus/new_sampling/',
+        biomart_host = biomart_host,
+        upstream = [1000, 150000],
+        downstream = [1000, 150000],
+        calculate_TF_eGRN_correlation = True,
+        calculate_DEGs_DARs = True,
+        export_to_loom_file = True,
+        export_to_UCSC_file = True,
+        path_bedToBigBed = '/database/wangrong/Reference',
+        n_cpu = 6,
+        _temp_dir = '/database/temp/ray_spill/')
+except Exception as e:
+    #in case of failure, still save the object
+    dill.dump(scplus_obj_sampling, open('/database/wangrong/Results/0712_ATAC+RNA/SCENIC/scenicplus/sampling/3.24.run.scplus_obj_sampling.pkl', 'wb'), protocol=-1)
+    raise(e)
+	
+```
+
+
+##  Estimate the switch time and rate parameters of gene regulation in CD14+ monocytes
+We used MultiVelo to fit counts of chromatin accessibility, unspliced mRNA and spliced mRNA in the whole population of CD14+ monocytes.
+```{bash scvelo,eval=FALSE}
+echo "******************************BEGIN******************************"
+begin=$(date "+%Y-%m-%d %H:%M:%S")
+echo "The script starts at ${begin}."
+
+people=(3 5)
+timepoints=(1 2 3 4 5 6 7 8 9 10)
+
+for i in ${people[*]}
+    do
+        for j in ${timepoints[*]}
+            do
+                echo "-------------------------SAMPLE${i}_${j} START-------------------------"
+                starttime=$(date "+%Y-%m-%d %H:%M:%S")
+                echo "Starts at ${starttime}"                
+				velocyto run10x -m  /home/wangrong/software/Repeat_rmsk.gtf \
+									/database/wangrong/Results/0712_ATAC+RNA/M${i}-${j} \
+									/home/wangrong/software/refdata-cellranger-arc-GRCh38-2020-A-2.0.0/genes/genes.gtf
+                finishtime=$(date "+%Y-%m-%d %H:%M:%S")
+                echo "Ends with ${finishtime}"
+                echo "--------------------------SAMPLE${i}_${j} END--------------------------"
+            done
+    done
+
+doen=$(date "+%Y-%m-%d %H:%M:%S")
+echo "The script ends with ${doen}."
+echo "*****************************FINISH******************************"
+
+```
+```{python multivelo,eval=FALSE}
+import numpy as np
+import pandas as pd
+import scanpy as sc
+import scvelo as scv
+import multivelo as mv
+import matplotlib.pyplot as plt
+import anndata as ad
+scv.settings.verbosity = 3
+scv.settings.presenter_view = True
+scv.set_figure_params('scvelo')
+pd.set_option('display.max_columns', 100)
+pd.set_option('display.max_rows', 200)
+np.set_printoptions(suppress=True)
+
+sample=["M2-1","M2-4","M2-5","M2-6","M2-7","M2-8","M2-9","M2-10",
+        "M1-1","M1-2","M1-3","M1-4","M1-5","M1-6","M1-7","M1-8","M1-9","M1-10",
+         "M3-1","M3-2","M3-3","M3-4","M3-5","M3-6","M3-7","M3-8","M3-9","M3-10",
+         "M5-1","M5-2","M5-3","M5-4","M5-5","M5-6","M5-7","M5-8","M5-9","M5-10"]
+adata_rna_list=[]
+adata_atac_list=[]
+
+for x in range(len(sample)):
+ target=sample[x]
+ print(target) 
+ atac_path = '/database/wangrong/Results/0712_ATAC+RNA/' + target + '/outs/filtered_feature_bc_matrix'
+ atac_annot_path = '/database/wangrong/Results/0712_ATAC+RNA/' + target + '/outs/atac_peak_annotation.tsv'
+ feature_linkage_path = '/database/wangrong/Results/0712_ATAC+RNA/' + target + '/outs/analysis/feature_linkage/feature_linkage.bedpe'
+ loom_path = '/database/wangrong/Results/0712_ATAC+RNA/' + target + '/velocyto/' + target + '.loom'
+ annot_path = '/home/huangdingli/sample_metadata.csv'
+
+
+ adata_rna = scv.read(loom_path, cache=True)
+ adata_rna.obs_names = [x.replace(':', '_')[:-1] + '-1' for x in adata_rna.obs_names]  # 加上'-1'后缀
+ adata_rna.var_names_make_unique()
+ sc.pp.filter_cells(adata_rna, min_counts=1000)
+ sc.pp.filter_cells(adata_rna, max_counts=20000)
+
+ cell_annot = pd.read_csv(annot_path, sep=',', index_col=0)
+ cell_annot_1= cell_annot[cell_annot["orig.ident"] == target]
+ shared_cells = pd.Index(np.intersect1d(adata_rna.obs_names, cell_annot_1.index))
+ adata_rna = adata_rna[shared_cells, ]
+ adata_rna
+ #print(cell_annot.head())
+ cell_annot_1.index
+ shared_cells
+
+ cell_annot_2 = cell_annot_1.loc[shared_cells]
+ adata_rna.obs['celltype'] = cell_annot_2['celltype']
+ adata_rna.obs['orig.ident'] = cell_annot_2['orig.ident']
+ adata_rna.obs['Timepoints'] = cell_annot_2['Timepoints']
+ adata_rna.obs['Participants'] = cell_annot_2['Participants']
+ adata_rna.obs['annotation'] = cell_annot_2['annotation']
+ adata_rna
+
+ adata_atac = sc.read_10x_mtx(atac_path,
+                             var_names='gene_symbols',
+                             cache=True, gex_only=False)
+ adata_atac = adata_atac[:, adata_atac.var['feature_types'] == "Peaks"]
+ adata_atac = mv.aggregate_peaks_10x(adata_atac,
+                                    atac_annot_path,
+                                    feature_linkage_path,
+                                    verbose=True)
+ adata_atac.obs_names = [target + '_' + x  for x in adata_atac.obs_names] 
+ plt.hist(adata_atac.X.sum(1), bins=100, range=(0, 40000))
+ plt.show()
+ sc.pp.filter_cells(adata_atac, min_counts=1500)
+ sc.pp.filter_cells(adata_atac, max_counts=25000)
+
+ adata_rna_list.append(adata_rna)
+ adata_atac_list.append(adata_atac)
+ 
+all_adata_rna=ad.concat(adata_rna_list,merge = "same")
+all_adata_rna
+all_adata_atac=ad.concat(adata_atac_list,merge = "same")
+all_adata_atac
+
+all_adata_rna.write("/database/wangrong/Results/0712_ATAC+RNA/python/10.28.all_adata_rna.h5ad")
+all_adata_atac.write("/database/wangrong/Results/0712_ATAC+RNA/python/10.28.all_adata_atac.h5ad")
+```
+```{python CD14mono,eval=FALSE}
+adata_result = sc.read_h5ad("/database/wangrong/Results/0712_ATAC+RNA/python/multivelo_result.h5ad")
+
+all_adata_rna =sc.read_h5ad("/database/wangrong/Results/0712_ATAC+RNA/python/10.28.all_adata_rna.h5ad")
+all_adata_atac =sc.read_h5ad("/database/wangrong/Results/0712_ATAC+RNA/python/10.28.all_adata_atac.h5ad")
+
+scv.pp.filter_and_normalize(all_adata_rna, min_shared_counts=10, n_top_genes=1000)
+all_adata_rna = all_adata_rna[all_adata_rna.obs['celltype'].isin(['Naïve CD4+ T cells','CD4+ Tcm','Treg'])]
+mv.tfidf_norm(all_adata_atac)
+
+shared_cells = pd.Index(np.intersect1d(all_adata_rna.obs_names, all_adata_atac.obs_names))
+shared_genes = pd.Index(np.intersect1d(all_adata_rna.var_names, all_adata_atac.var_names))
+print(len(shared_cells), len(shared_genes))
+
+all_adata_rna=ad.concat(adata_rna_list,merge = "same")
+all_adata_rna
+all_rna = all_adata_rna[shared_cells, shared_genes]
+all_atac = all_adata_atac[shared_cells, shared_genes]
+
+scv.pp.normalize_per_cell(all_rna)
+scv.pp.log1p(all_rna)
+scv.pp.moments(all_rna, n_pcs=30, n_neighbors=50)
+
+#all_rna.obs['celltype'] = cell_annot_2.loc[all_rna.obs_names, 'celltype']
+all_rna.obs['celltype'] = all_rna.obs['celltype'].astype('category')
+
+all_clusters =['CD14+ mono']
+all_rna.obs['celltype'] = all_rna.obs['celltype'].cat.reorder_categories(all_clusters)
+scv.tl.umap(all_rna)
+scv.pl.umap(all_rna, color='celltype',save="/database/wangrong/Results/0712_ATAC+RNA/python/all.umap_CD14.pdf")
+
+all_rna.obs_names.to_frame().to_csv('/database/wangrong/Results/0712_ATAC+RNA/python/all.CD14.test_filter.txt', header=False, index=False)
+all_rna
+
+scv.pl.umap(all_rna, color='annotation',save="/database/wangrong/Results/0712_ATAC+RNA/python/10.28.ALL.umap_CD4T_annotation.pdf")
+scv.pl.umap(all_rna, color='Timepoints',save="/database/wangrong/Results/0712_ATAC+RNA/python/10.28.ALL.umap_CD4T_Timepoints.pdf")
+scv.pl.umap(all_rna, color='Participants',save="/database/wangrong/Results/0712_ATAC+RNA/python/10.28.ALL.umap_CD4T_Participantss.pdf")
+
+nn_idx = np.loadtxt("/database/wangrong/Results/0712_ATAC+RNA/python/seurat_nn/10.28.nn_idx.txt", delimiter=',')
+nn_dist = np.loadtxt("/database/wangrong/Results/0712_ATAC+RNA/python/seurat_nn/10.28.nn_idx.txt", delimiter=',')
+nn_cells = pd.Index(pd.read_csv("/database/wangrong/Results/0712_ATAC+RNA/python/seurat_nn/10.28.nn_idx.txt", header=None)[0])
+
+np.all(nn_cells == all_rna.obs_names)
+mv.knn_smooth_chrom(all_atac, nn_idx, nn_dist)
+all_atac
+```
