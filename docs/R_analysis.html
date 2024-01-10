@@ -1,0 +1,3471 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="wangrong" />
+
+
+<title>R</title>
+
+<script src="site_libs/header-attrs-2.25/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-6.4.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet" />
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/main/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Single-cell multiomics_SARS-CoV-2 inactivated vaccine_analysis</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="R_analysis.html">R analysis</a>
+</li>
+<li>
+  <a href="python_analysis.html">python analysis</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/WangRong423/scMultiomics_SARS-CoV-2_vaccine_analysis">
+    <span class="fab fa-github"></span>
+     
+    Source code
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">R</h1>
+<h4 class="author">wangrong</h4>
+<h4 class="date">2024/1/8</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+workflowr <span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+</a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2024-01-10
+</p>
+<p>
+<strong>Checks:</strong> <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> 0
+</p>
+<p>
+<strong>Knit directory:</strong>
+<code>scMultiomics_SARS-CoV-2_vaccine_analysis/</code> <span
+class="glyphicon glyphicon-question-sign" aria-hidden="true"
+title="This is the local directory in which the code in this file was executed.">
+</span>
+</p>
+<p>
+This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
+analysis was created with <a
+  href="https://github.com/workflowr/workflowr">workflowr</a> (version
+1.7.1). The <em>Checks</em> tab describes the reproducibility checks
+that were applied when the results were created. The <em>Past
+versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date
+</a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguptodate"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great! Since the R Markdown file has been committed to the Git
+repository, you know the exact version of the code that produced these
+results.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the
+global environment can affect the analysis in your R Markdown file in
+unknown ways. For reproduciblity it’s best to always run the code in an
+empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20240110code">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Seed:</strong>
+<code>set.seed(20240110)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20240110code"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20240110)</code> was run prior to running
+the code in the R Markdown file. Setting a seed ensures that any results
+that rely on randomness, e.g. subsampling or permutations, are
+reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Session information:</strong>
+recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package
+versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be
+confident that you successfully produced the results during this
+run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr
+project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrong72e7d4f">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Repository version:</strong> 72e7d4f
+</a>
+</p>
+</div>
+<div id="strongRepositoryversionstrong72e7d4f"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development
+and connecting the code version to the results is critical for
+reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version 72e7d4f.
+See the <em>Past versions</em> tab to see a history of the changes made
+to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for
+the analysis have been committed to Git prior to generating the results
+(you can use <code>wflow_publish</code> or
+<code>wflow_git_commit</code>). workflowr only checks the R Markdown
+file, but you know if there are other scripts or data files that it
+depends on. Below is the status of the Git repository when the results
+were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    Downloads/
+
+Unstaged changes:
+    Modified:   analysis/_site.yml
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not
+included in this status report because it is ok for generated content to
+have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+
+<p>
+These are the previous versions of the repository in which changes were
+made to the R Markdown (<code>analysis/R_analysis.Rmd</code>) and HTML
+(<code>docs/R_analysis.html</code>) files. If you’ve configured a remote
+Git repository (see <code>?wflow_git_remote</code>), click on the
+hyperlinks in the table below to view the files as they were in that
+past version.
+</p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+72e7d4f
+</td>
+<td>
+WangRong423
+</td>
+<td>
+2024-01-10
+</td>
+<td>
+Publish the initial files for myproject
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div id="data" class="section level2">
+<h2>Data</h2>
+<p>Code for generating fragments files for snATAC and counts matrix for
+snRNA was obtained from 10x genimics (<a
+href="https://support.10xgenomics.com/single-cell-multiome-atac-gex/software/pipelines/latest/what-is-cell-ranger-arc"
+class="uri">https://support.10xgenomics.com/single-cell-multiome-atac-gex/software/pipelines/latest/what-is-cell-ranger-arc</a>)</p>
+<p>The 10x mutiomics sequencing data generated in this study has been
+deposited in the Genemo Sequence Archive (Genomics, Protemics &amp;
+Bioinformatics 2021) in National Genomics Data Center (Nuceic Acid Res
+2022), China National Center for Bioinformation / Beijing Institute of
+Genomics, Chinese Academy of Sciences (GSA-Human : HRA003439) that are
+publicly accessible at <a href="https://ngdc.cncb.ac.cn/gsa-human"
+class="uri">https://ngdc.cncb.ac.cn/gsa-human</a>.</p>
+</div>
+<div id="quality-control" class="section level2">
+<h2>Quality control</h2>
+<p>Raw gene expression matrices were generated for each sample by the
+Cell Ranger ARC(V.2.0) Pipeline coupled with human reference version
+GRCh38. The output filtered gene expression matrices were analyzed by R
+software (v.4.1.1) with the Seurat package (v.4.0.3). Low-quality cells
+were removed if they met the following criteria:</p>
+<ol style="list-style-type: decimal">
+<li>&lt;800 &amp;&gt;25000 unique molecular identifiers (UMIs);</li>
+<li>&lt;200 &amp;&gt;5000 genes which expressed in less than three
+cells;</li>
+<li>UMIs derived from the mitochondrial genome &gt;15%.</li>
+</ol>
+<p>Identify doublets To remove potential doublets, we applied
+DoubletFinder to identify potential doublets. After quality control, a
+total of 384,765 cells were remained.</p>
+<pre class="r"><code>library(tidyverse)
+library(Seurat)
+library(DoubletDecon)
+library(plyr)
+library(dplyr)
+library(Matrix)
+library(ggplot2)
+library(cowplot)
+library(Seurat)
+library(limma)
+library(DoubletFinder)
+
+batch_list=list(&quot;M1-1&quot;,&quot;M1-2&quot;,&quot;M1-3&quot;,&quot;M1-4&quot;,&quot;M1-5&quot;,&quot;M1-6&quot;,&quot;M1-7&quot;,&quot;M1-8&quot;,&quot;M1-9&quot;,&quot;M1-10&quot;,
+                &quot;M2-1&quot;,&quot;M2-3&quot;,&quot;M2-4&quot;,&quot;M2-5&quot;,&quot;M2-6&quot;,&quot;M2-7&quot;,&quot;M2-8&quot;,&quot;M2-9&quot;,&quot;M2-10&quot;,&quot;M2-11&quot;,&quot;M2-12&quot;,
+                &quot;M3-4&quot;,&quot;M3-5&quot;,&quot;M3-6&quot;,&quot;M3-7&quot;,&quot;M3-8&quot;,&quot;M3-9&quot;,&quot;M3-10&quot;,
+                &quot;M5-1&quot;,&quot;M5-2&quot;,&quot;M5-3&quot;,&quot;M5-4&quot;,&quot;M5-5&quot;,&quot;M5-6&quot;,&quot;M5-7&quot;,&quot;M5-8&quot;,&quot;M5-9&quot;,&quot;M5-10&quot;)
+Timepoints=list(&quot;Day0&quot;,&quot;Day1&quot;,&quot;Day3&quot;,&quot;Day6&quot;,&quot;Day14&quot;,&quot;Day30&quot;,&quot;Day31&quot;,&quot;Day33&quot;,&quot;Day36&quot;,&quot;Day44&quot;,
+                &quot;Day0&quot;,&quot;Day3&quot;,&quot;Day6&quot;,&quot;Day14&quot;,&quot;Day30&quot;,&quot;Day31&quot;,&quot;Day33&quot;,&quot;Day36&quot;,&quot;Day44&quot;,&quot;Day171&quot;,&quot;Day185&quot;,
+                &quot;Day6&quot;,&quot;Day14&quot;,&quot;Day30&quot;,&quot;Day31&quot;,&quot;Day33&quot;,&quot;Day36&quot;,&quot;Day44&quot;,
+                &quot;Day0&quot;,&quot;Day1&quot;,&quot;Day3&quot;,&quot;Day6&quot;,&quot;Day14&quot;,&quot;Day30&quot;,&quot;Day31&quot;,&quot;Day33&quot;,&quot;Day36&quot;,&quot;Day44&quot;)
+Participants=list(&quot;P1&quot;,&quot;P1&quot;,&quot;P1&quot;,&quot;P1&quot;,&quot;P1&quot;,&quot;P1&quot;,&quot;P1&quot;,&quot;P1&quot;,&quot;P1&quot;,&quot;P1&quot;,
+                  &quot;P2&quot;,&quot;P2&quot;,&quot;P2&quot;,&quot;P2&quot;,&quot;P2&quot;,&quot;P2&quot;,&quot;P2&quot;,&quot;P2&quot;,&quot;P2&quot;,&quot;P2&quot;,&quot;P2&quot;,
+                  &quot;P3&quot;,&quot;P3&quot;,&quot;P3&quot;,&quot;P3&quot;,&quot;P3&quot;,&quot;P3&quot;,&quot;P3&quot;,
+                  &quot;P4&quot;,&quot;P4&quot;,&quot;P4&quot;,&quot;P4&quot;,&quot;P4&quot;,&quot;P4&quot;,&quot;P4&quot;,&quot;P4&quot;,&quot;P4&quot;,&quot;P4&quot;)
+for( i in 1:length(batch_list))
+{
+print(batch_list[[i]])
+dir=paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/&#39;,batch_list[[i]],&#39;/outs/filtered_feature_bc_matrix&#39;)
+print(dir)
+s_object_data=Read10X(data.dir = dir)
+
+s_object=CreateSeuratObject(counts =s_object_data$`Gene Expression`, project = batch_list[[i]])
+s_object[[&quot;percent.mt&quot;]] &lt;- PercentageFeatureSet(s_object, pattern = &quot;^MT-&quot;)
+print(dim(s_object))
+a=summary(s_object$nFeature_RNA)
+b=summary(s_object$nCount_RNA)
+c=summary(s_object$percent.mt)
+print(a)
+print(b)
+print(c)
+#QC percent.mt
+s_object &lt;- subset(s_object, subset =  nFeature_RNA &gt; 200 &amp; nFeature_RNA &lt; 5000 &amp; nCount_RNA &gt; 800 &amp; nCount_RNA &lt; 25000 &amp; percent.mt &lt;15)
+print(dim(s_object))
+a1=summary(s_object$nFeature_RNA)
+b1=summary(s_object$nCount_RNA)
+c1=summary(s_object$percent.mt)
+print(a1)
+print(b1)
+print(c1)
+#Normalize
+s_object &lt;- NormalizeData(s_object, normalization.method = &quot;LogNormalize&quot;, scale.factor = 10000)
+#FindVariableFeatures
+s_object &lt;- FindVariableFeatures(s_object, selection.method = &quot;vst&quot;, nfeatures = 2000)
+#Scale
+s_object &lt;- ScaleData(s_object, features = rownames(s_object))
+#PCA
+s_object &lt;- RunPCA(s_object, features = VariableFeatures(s_object),npcs = 20)
+#cluster
+name = paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/HIPPO/&#39;,batch_list[[i]], &#39;_bef_double_umap.pdf&#39;)
+pdf(file = name)
+s_object &lt;- FindNeighbors(s_object, dims = 1:20)
+s_object &lt;- FindClusters(s_object, resolution = 0.3)
+s_object &lt;- RunUMAP(s_object, dims = 1:20)
+p1&lt;-DimPlot(s_object,reduction = &quot;umap&quot;,pt.size = 0.5,label = TRUE)
+
+location=&quot;/database/wangrong/Results/0712_ATAC+RNA/HIPPO/&quot;
+filename=paste0(batch_list[[i]],&#39;_PBMC_example&#39;)
+newFiles=Improved_Seurat_Pre_Process(s_object, num_genes=50, write_files=FALSE)
+
+results=Main_Doublet_Decon(rawDataFile=newFiles$newExpressionFile, 
+                           groupsFile=newFiles$newGroupsFile, 
+                           filename=filename, 
+                           location=location,
+                           fullDataFile=NULL, 
+                           removeCC=FALSE, 
+                           species=&quot;hsa&quot;, 
+                           rhop=1, 
+                           write=TRUE, 
+                           PMF=TRUE, 
+                           useFull=FALSE, 
+                           heatmap=FALSE,
+                           centroids=TRUE,
+                           num_doubs=100, 
+                           only50=FALSE,
+                           min_uniq=4,
+                           nCores=6)
+dou=length(row.names(results$Final_doublets_groups))
+sing=length(row.names(results$Final_nondoublets_groups))
+p=dou/(sing+dou)
+print(p)
+
+DRS_doublet_table=results$DRS_doublet_table
+addmargins(table(DRS_doublet_table$isADoublet))
+DRS_doublet_table$Dlabel=factor(DRS_doublet_table$isADoublet,c(FALSE,TRUE),ordered = T, labels=c(&quot;Singlet&quot;,&quot;Doublet&quot;))
+seuratObject=AddMetaData(s_object,DRS_doublet_table$Dlabel, col.name = &quot;Dlabel&quot;)
+Idents(seuratObject)=seuratObject@meta.data$Dlabel
+dp1=DimPlot(seuratObject,reduction=&quot;umap&quot;)
+dp1=dp1 +
+  theme(legend.position=&quot;top&quot;) +
+  theme(axis.text = element_text(size=9),
+        axis.title = element_text(size=10),
+        legend.text = element_text(size=9))
+print(dp1)
+print(p1)
+dev.off()
+saveRDS(seuratObject,file=paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/HIPPO/&#39;,batch_list[[i]],&#39;_BeforeDoublet.rds&#39;))
+seuratObject@meta.data$Timepoints &lt;- Timepoints[[i]]
+seuratObject@meta.data$Participants &lt;- Participants[[i]]
+seuratObject_RemoveDoublet&lt;-subset(x = seuratObject, Dlabel==&quot;Singlet&quot;)
+print(dim(seuratObject_RemoveDoublet))
+a2=summary(seuratObject_RemoveDoublet$nFeature_RNA)
+b2=summary(seuratObject_RemoveDoublet$nCount_RNA)
+c2=summary(seuratObject_RemoveDoublet$percent.mt)
+print(a2)
+print(b2)
+print(c2)
+saveRDS(seuratObject_RemoveDoublet,file=paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/HIPPO/&#39;,batch_list[[i]],&#39;_RemoveDoublet.rds&#39;))
+
+}</code></pre>
+<p>We performed ATAC fragment data QC using the ArchR (v.1.0.) software.
+Cells with less than 1,000 or more than 50,000 sequencing fragments were
+filtered out.</p>
+<pre class="r"><code>library(Signac)
+library(Seurat)
+library(EnsDb.Hsapiens.v86)
+library(Signac)
+library(Seurat)
+library(GenomicRanges)
+library(future)
+plan(&quot;multiprocess&quot;, workers = 4)
+options(future.globals.maxSize = 50000 * 1024^2)
+
+batch_list=list(&quot;M1-1&quot;,&quot;M1-2&quot;,&quot;M1-3&quot;,&quot;M1-4&quot;,&quot;M1-5&quot;,&quot;M1-6&quot;,&quot;M1-7&quot;,&quot;M1-8&quot;,&quot;M1-9&quot;,&quot;M1-10&quot;,
+&quot;M2-1&quot;,&quot;M2-2&quot;,&quot;M2-3&quot;,&quot;M2-4&quot;,&quot;M2-5&quot;,&quot;M2-6&quot;,&quot;M2-7&quot;,&quot;M2-8&quot;,&quot;M2-9&quot;,&quot;M2-10&quot;,&quot;M2-11&quot;,&quot;M2-12&quot;,
+&quot;M3-1&quot;,&quot;M3-2&quot;,&quot;M3-3&quot;,&quot;M3-4&quot;,&quot;M3-5&quot;,&quot;M3-6&quot;,&quot;M3-7&quot;,&quot;M3-8&quot;,&quot;M3-9&quot;,&quot;M3-10&quot;,
+&quot;M5-1&quot;,&quot;M5-2&quot;,&quot;M5-3&quot;,&quot;M5-4&quot;,&quot;M5-5&quot;,&quot;M5-6&quot;,&quot;M5-7&quot;,&quot;M5-8&quot;,&quot;M5-9&quot;,&quot;M5-10&quot;)
+gex&lt;-list()
+for( i in 1:length(batch_list))
+{
+print(batch_list[[i]])
+dir=paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/&#39;,batch_list[[i]],&#39;/outs/filtered_feature_bc_matrix&#39;)
+counts=Read10X(data.dir = dir)
+metadata &lt;- read.csv(file = paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/&#39;,batch_list[[i]],&#39;/outs/per_barcode_metrics.csv&#39;),header = TRUE,row.names = 1)
+fragment.path &lt;- paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/&#39;,batch_list[[i]],&#39;/outs/atac_fragments.tsv.gz&#39;)
+annotation &lt;- GetGRangesFromEnsDb(ensdb = EnsDb.Hsapiens.v86)
+seqlevelsStyle(annotation) &lt;- &#39;UCSC&#39;
+
+pbmc &lt;- CreateSeuratObject(counts = counts$`Gene Expression`,assay = &quot;RNA&quot;)
+pbmc[[&quot;ATAC&quot;]] &lt;- CreateChromatinAssay(counts = counts$Peaks,sep = c(&quot;:&quot;, &quot;-&quot;),fragments = fragment.path,annotation = annotation)
+DefaultAssay(pbmc) &lt;- &quot;ATAC&quot;
+
+gex[[i]] = readRDS(file=paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/HIPPO/hippo/&#39;,batch_list[[i]],&#39;_RemoveDoublet.rds&#39;))
+print(&quot;gex is down!&quot;)
+pbmc &lt;- subset(pbmc,cells=rownames(gex[[i]]@meta.data))
+print(&quot;RNA subset is doen!&quot;)
+pbmc &lt;- NucleosomeSignal(pbmc)
+pbmc &lt;- TSSEnrichment(pbmc)
+
+pbmc&lt;-subset(x = pbmc,subset = nCount_ATAC &lt; 50000 &amp;nCount_ATAC &gt; 1000 &amp;nucleosome_signal &lt; 5 &amp;TSS.enrichment &gt; 1)
+sub_gex &lt;- subset(gex[[i]],cells=rownames(pbmc@meta.data))
+pbmc@meta.data &lt;- cbind(sub_gex@meta.data,pbmc@meta.data)
+saveRDS(pbmc,paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/Signac/co_joint/&#39;,batch_list[[i]],&#39;_cojoint.rds&#39;))
+}
+
+cell_name_ids=C(&quot;M1-1&quot;,&quot;M1-2&quot;,&quot;M1-3&quot;,&quot;M1-4&quot;,&quot;M1-5&quot;,&quot;M1-6&quot;,&quot;M1-7&quot;,&quot;M1-8&quot;,&quot;M1-9&quot;,&quot;M1-10&quot;,
+                &quot;M2-1&quot;,&quot;M2-2&quot;,&quot;M2-3&quot;,&quot;M2-4&quot;,&quot;M2-5&quot;,&quot;M2-6&quot;,&quot;M2-7&quot;,&quot;M2-8&quot;,&quot;M2-9&quot;,&quot;M2-10&quot;,&quot;M2-11&quot;,&quot;M2-12&quot;,
+                &quot;M3-1&quot;,&quot;M3-2&quot;,&quot;M3-3&quot;,&quot;M3-4&quot;,&quot;M3-5&quot;,&quot;M3-6&quot;,&quot;M3-7&quot;,&quot;M3-8&quot;,&quot;M3-9&quot;,&quot;M3-10&quot;,
+                &quot;M5-1&quot;,&quot;M5-2&quot;,&quot;M5-3&quot;,&quot;M5-4&quot;,&quot;M5-5&quot;,&quot;M5-6&quot;,&quot;M5-7&quot;,&quot;M5-8&quot;,&quot;M5-9&quot;,&quot;M5-10&quot;)
+batch_list=list(&quot;M1-1&quot;,&quot;M1-2&quot;,&quot;M1-3&quot;,&quot;M1-4&quot;,&quot;M1-5&quot;,&quot;M1-6&quot;,&quot;M1-7&quot;,&quot;M1-8&quot;,&quot;M1-9&quot;,&quot;M1-10&quot;,
+                &quot;M2-1&quot;,&quot;M2-2&quot;,&quot;M2-3&quot;,&quot;M2-4&quot;,&quot;M2-5&quot;,&quot;M2-6&quot;,&quot;M2-7&quot;,&quot;M2-8&quot;,&quot;M2-9&quot;,&quot;M2-10&quot;,&quot;M2-11&quot;,&quot;M2-12&quot;,
+                &quot;M3-1&quot;,&quot;M3-2&quot;,&quot;M3-3&quot;,&quot;M3-4&quot;,&quot;M3-5&quot;,&quot;M3-6&quot;,&quot;M3-7&quot;,&quot;M3-8&quot;,&quot;M3-9&quot;,&quot;M3-10&quot;,
+                &quot;M5-1&quot;,&quot;M5-2&quot;,&quot;M5-3&quot;,&quot;M5-4&quot;,&quot;M5-5&quot;,&quot;M5-6&quot;,&quot;M5-7&quot;,&quot;M5-8&quot;,&quot;M5-9&quot;,&quot;M5-10&quot;)
+all_p=list()           
+for( i in 1:length(batch_list))
+{
+  all_p[[i]] = readRDS(file=paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/Signac/co_joint/&#39;,batch_list[[i]],&#39;_cojoint.rds&#39;))
+  DefaultAssay(all_p[[i]]) &lt;- &quot;ATAC&quot;
+}
+PBMCmerge &lt;- merge(all_p[[1]],all_p[2:length(batch_list)],add.cell.ids = cell_name_ids)
+saveRDS(PBMCmerge,file=&quot;/database/wangrong/Results/0712_ATAC+RNA/Signac/co_joint/5.14_merge_cojoint.rds&quot;)</code></pre>
+</div>
+<div id="clustering-and-annotation" class="section level2">
+<h2>Clustering and annotation</h2>
+<p>To solve the problem of heterogeneity and fine clustering cells, we
+used R package lightHIPPO(Heterogeneity Induced Pre-Processing tool),
+and make full use of the zero value proportional to detect each gene in
+different levels of cell type heterogeneity.</p>
+<pre class="r"><code>##修改策略：先将zero inflation cutoff值设置得比较小，然后当第一个cluster达到smallest.cluster.num条件，被加入黑名单是，将它对应的zero inflation赋值给zero inflation cutoff
+selectCluster_to_proceed_inflation_JXY &lt;- function(inflation.list, IDs, cluster.size.cutoff = 100,blacklist){
+  # inflation.list=inflation.tracking
+  # IDs=next_round_IDs
+  # cluster.size.cutoff = smallest.cluster.num
+  blacklist=unique(blacklist)
+  cluster.sizes &lt;- table(IDs)
+  passed.clusters &lt;- which(cluster.sizes &gt;= cluster.size.cutoff)
+  if (!is.null(blacklist)){
+    passed.clusters &lt;- passed.clusters[!(passed.clusters%in%blacklist)]
+  }
+  go_with_higher_inflation &lt;- which.max(inflation.list[passed.clusters])
+  selected.cluster &lt;- passed.clusters[go_with_higher_inflation]
+  return(selected.cluster)
+}
+
+library(JXYlightHippo,lib.loc = &quot;/home/jiangxinyu/R/x86_64-pc-linux-gnu-library/4.1&quot;)
+library(Seurat,lib.loc = &quot;/home/jiangxinyu/R/x86_64-pc-linux-gnu-library/4.1&quot;)
+library(sys,lib.loc = &quot;/home/jiangxinyu/R/x86_64-pc-linux-gnu-library/4.1&quot;)
+library(Signac,lib.loc = &quot;/home/wangrong/R/x86_64-pc-linux-gnu-library/4.2&quot;)
+time1 &lt;- Sys.time()
+#dat &lt;- as_matrix(Gex)#单样本数据用来测试
+dat &lt;- readRDS(&quot;/database/wangrong/Results/0712_ATAC+RNA/Signac/co_joint/5.14_merge_cojoint.rds&quot;)
+dat &lt;- dat@assays[[&quot;RNA&quot;]]@counts
+dat &lt;- as_matrix(dat)
+K.round = 600
+initial.labels = NULL
+initial.round = 0
+stop_at = 500
+correctByK = FALSE
+override.Zscore.cutoff = NULL
+smallest.cluster.num = 400
+random.num = 5000
+move.by.inflation = TRUE
+inflation_cutoff &lt;- 0
+#lightHIPPO &lt;- function(dat, K.round = 10, initial.labels = NULL, initial.round = 0, stop_at = 500, correctByK = FALSE, override.Zscore.cutoff = NULL, smallest.cluster.num = 200, random.num = 2500, move.by.inflation = TRUE){
+
+  require(irlba)
+  total.num.cell &lt;- ncol(dat)
+  total.num.gene &lt;- nrow(dat)
+
+  if(!is.null(initial.labels)){
+    if(length(initial.labels) != total.num.cell){
+      stop(&quot;Length of initial group labels doesn&#39;t match the number of cell.&quot;)
+    }
+    initial.round &lt;- 0
+  }
+
+  if(!is.null(override.Zscore.cutoff)) {
+    Zscore.cutoff &lt;- override.Zscore.cutoff
+  } else if(correctByK == FALSE){
+    Zscore.cutoff &lt;- cut_off_zscore(total.num.gene)#根据基因数计算Zscore阈值 4.54
+  } else {
+    Zscore.cutoff &lt;- cut_off_zscore(total.num.gene*K)
+  }
+
+  if(move.by.inflation == TRUE){
+
+    ### calculate the inflation number for each cluster based on a random set of genes ###
+    set.seed(1234567)
+    #从1：总gene.num随机出random.num个数
+    randomIDs &lt;- sample(1:total.num.gene, random.num)
+
+    if(is.null(initial.labels) &amp; initial.round &gt; 0) {
+
+      initial_clusters &lt;- initialize_HIPPO(dat, initial.round = initial.round, stop_at = stop_at, Zscore.cutoff = Zscore.cutoff)
+      next_round_IDs &lt;- initial_clusters$next_round_IDs
+      res &lt;- initial_clusters
+
+      selected.gene.list &lt;- NULL
+      selected.gene.Zscore &lt;- NULL
+      inflation.tracking &lt;- NULL
+      for(i in 1:c(initial.round+1)){
+        inflation.tracking &lt;- c(inflation.tracking, check_zero_inflation_numbers(dat[randomIDs, next_round_IDs%in%i], Zscore.cutoff = Zscore.cutoff))
+      }
+      names(inflation.tracking) &lt;- 1:c(initial.round + 1)
+
+      for(i.round in (initial.round + 1):K.round){
+
+        go_with_higher_inflationID &lt;- selectCluster_to_proceed_inflation_JXY(inflation.tracking, next_round_IDs, cluster.size.cutoff = smallest.cluster.num)
+        selected.dat &lt;- dat[, next_round_IDs%in%go_with_higher_inflationID]
+        selected.res &lt;- select_features_full(selected.dat, Zscore.cutoff = Zscore.cutoff)
+        selected.ID &lt;- selected.res$selected
+        selected.Zscore &lt;- selected.res$Zscore
+
+        new.subset.dat &lt;- selected.dat[selected.ID, ]
+        clusterID &lt;- run_kmeans_clustering(new.subset.dat)
+        next_round_IDs[next_round_IDs%in%go_with_higher_inflationID][clusterID == 2] &lt;- i.round + 1
+        res$sequence &lt;- c(res$sequence, go_with_higher_inflationID)
+
+        inflation.tracking[go_with_higher_inflationID] &lt;- check_zero_inflation_numbers(dat[randomIDs, next_round_IDs%in%go_with_higher_inflationID], Zscore.cutoff = Zscore.cutoff)
+        inflation.tracking &lt;- c(inflation.tracking, check_zero_inflation_numbers(dat[randomIDs, next_round_IDs%in%(i.round+1)], Zscore.cutoff = Zscore.cutoff))
+        names(inflation.tracking)[i.round+1] &lt;- i.round+1
+
+        selected.gene.list[[i.round]] &lt;- selected.ID
+        selected.gene.Zscore[[i.round]] &lt;- selected.Zscore
+      }
+      res$next_round_IDs &lt;- next_round_IDs
+      names(res$sequence) &lt;- 1:length(res$sequence)+2
+      res$selected.gene.list &lt;- selected.gene.list
+      res$selected.gene.Zscore &lt;- selected.gene.Zscore
+      res$type &lt;- &quot;Rooted&quot;
+      res$initial.clusters &lt;- NULL
+
+    } else if(is.null(initial.labels) &amp; initial.round == 0) {
+
+      res &lt;- NULL
+      res$sequence &lt;- NULL
+      inflation.tracking &lt;- NULL
+      selected.gene.list &lt;- NULL
+      selected.gene.Zscore &lt;- NULL
+      blacklist &lt;- NULL
+      i.label &lt;- 0
+      for(i.round in (initial.round + 1):K.round){
+        i.round &lt;- i.round-i.label
+        if(i.round == 1){
+
+          selected.res &lt;- select_features_full(dat, Zscore.cutoff = Zscore.cutoff)
+          selected.ID &lt;- selected.res$selected
+          selected.Zscore &lt;- selected.res$Zscore
+          new.subset.dat &lt;- dat[selected.ID, ]
+          clusterID &lt;- run_kmeans_clustering(new.subset.dat)
+          next_round_IDs &lt;- clusterID
+          #随机抽样检查每一簇中的inflation gene
+          inflation.tracking[1] &lt;- check_zero_inflation_numbers(dat[randomIDs, next_round_IDs==1], Zscore.cutoff = Zscore.cutoff)
+          inflation.tracking[2] &lt;- check_zero_inflation_numbers(dat[randomIDs, next_round_IDs==2], Zscore.cutoff = Zscore.cutoff)
+          names(inflation.tracking) &lt;- c(1:2)
+
+          selected.gene.list[[i.round]] &lt;- selected.ID
+          selected.gene.Zscore[[i.round]] &lt;- selected.Zscore
+
+        } else {
+          #选出inflation cluster ID
+          print(inflation.tracking)
+          go_with_higher_inflationID &lt;- selectCluster_to_proceed_inflation_JXY(inflation.tracking, next_round_IDs, cluster.size.cutoff = smallest.cluster.num,blacklist = blacklist)
+          if(!length(go_with_higher_inflationID)){
+            break
+          }
+          selected.dat &lt;- dat[, next_round_IDs%in% go_with_higher_inflationID]
+          selected.res &lt;- select_features_full(selected.dat, Zscore.cutoff = Zscore.cutoff)
+          selected.ID &lt;- selected.res$selected
+          selected.Zscore &lt;- selected.res$Zscore
+
+          new.subset.dat &lt;- selected.dat[selected.ID, ]
+          #将选择出的inflation cluster 继续分
+          clusterID &lt;- run_kmeans_clustering(new.subset.dat)
+          #table(clusterID)
+          if(length(blacklist)==1){
+            inflation_cutoff &lt;- inflation.tracking[blacklist]
+          }
+          blacklist &lt;- c(blacklist,which(inflation.tracking&lt;0.8*inflation_cutoff))
+          blacklist &lt;- unique(blacklist)
+          flag=table(clusterID)&lt;smallest.cluster.num
+          if (flag[1]|flag[2]){
+            #加入黑名单 表明这个cluster无需再分
+            blacklist &lt;- c(blacklist,go_with_higher_inflationID)
+            i.label &lt;- i.label+1
+            next
+          }
+          #将next_round_IDs中的inflation cluster分出的“2”贴上新的标签
+          next_round_IDs[next_round_IDs%in%go_with_higher_inflationID][clusterID == 2] &lt;- i.round + 1
+          print(table(next_round_IDs))
+          #将inflationID做一个记录
+          res$sequence &lt;- c(res$sequence, go_with_higher_inflationID)
+          #更新inflation.tracking（原来inflation cluster的inflation number会下降）
+          inflation.tracking[go_with_higher_inflationID] &lt;- check_zero_inflation_numbers(dat[randomIDs, next_round_IDs%in%go_with_higher_inflationID], Zscore.cutoff = Zscore.cutoff)
+          #check new cluster的inflaton gene number  and lables
+          inflation.tracking &lt;- c(inflation.tracking, check_zero_inflation_numbers(dat[randomIDs, next_round_IDs%in%(i.round+1)], Zscore.cutoff = Zscore.cutoff))
+          names(inflation.tracking)[i.round+1] &lt;- i.round+1
+
+          selected.gene.list[[i.round]] &lt;- selected.ID
+          selected.gene.Zscore[[i.round]] &lt;- selected.Zscore
+          print(i.round)
+        }
+
+      }
+      res$next_round_IDs &lt;- next_round_IDs
+      names(res$sequence) &lt;- 1:length(res$sequence)+2
+      res$selected.gene.list &lt;- selected.gene.list
+      res$selected.gene.Zscore &lt;- selected.gene.Zscore
+      res$type &lt;- &quot;Rooted&quot;
+      res$initial.clusters &lt;- NULL
+
+    } else if(!is.null(initial.labels)) {
+
+      res &lt;- NULL
+      res$sequence &lt;- NULL
+      selected.gene.list &lt;- NULL
+      selected.gene.Zscore &lt;- NULL
+
+      next_round_IDs &lt;- initial.labels
+
+      inflation.tracking &lt;- NULL
+      for(i in 1:max(initial.labels)){
+        inflation.tracking &lt;- c(inflation.tracking, check_zero_inflation_numbers(dat[randomIDs, next_round_IDs%in%i], Zscore.cutoff = Zscore.cutoff))
+      }
+      names(inflation.tracking) &lt;- 1:max(initial.labels)
+
+      for(i.round in (max(initial.labels)):(K.round+max(initial.labels)-1)){
+
+        go_with_higher_inflationID &lt;- selectCluster_to_proceed_inflation(inflation.tracking, next_round_IDs, cluster.size.cutoff = smallest.cluster.num)
+        selected.dat &lt;- dat[, next_round_IDs%in% go_with_higher_inflationID]
+        selected.res &lt;- select_features_full(selected.dat, Zscore.cutoff = Zscore.cutoff)
+        selected.ID &lt;- selected.res$selected
+        selected.Zscore &lt;- selected.res$Zscore
+
+        new.subset.dat &lt;- selected.dat[selected.ID, ]
+        clusterID &lt;- run_kmeans_clustering(new.subset.dat)
+        next_round_IDs[next_round_IDs%in%go_with_higher_inflationID][clusterID == 2] &lt;- i.round + 1
+        res$sequence &lt;- c(res$sequence, go_with_higher_inflationID)
+
+        inflation.tracking[go_with_higher_inflationID] &lt;- check_zero_inflation_numbers(dat[randomIDs, next_round_IDs%in%go_with_higher_inflationID], Zscore.cutoff = Zscore.cutoff)
+        inflation.tracking &lt;- c(inflation.tracking, check_zero_inflation_numbers(dat[randomIDs, next_round_IDs%in%(i.round+1)], Zscore.cutoff = Zscore.cutoff))
+        names(inflation.tracking)[i.round+1] &lt;- i.round+1
+
+        selected.gene.list[[i.round]] &lt;- selected.ID
+        selected.gene.Zscore[[i.round]] &lt;- selected.Zscore
+
+      }
+
+      res$next_round_IDs &lt;- next_round_IDs
+      names(res$sequence) &lt;- 1:length(res$sequence)+max(initial.labels)
+      res$selected.gene.list &lt;- selected.gene.list
+      res$selected.gene.Zscore &lt;- selected.gene.Zscore
+      res$type &lt;- &quot;Truncated&quot;
+      res$initial.clusters &lt;- initial.labels
+    }
+
+  }
+
+  if(move.by.inflation == FALSE) {
+
+    ### calculating first 10 PCs
+    first_pcs &lt;- tryCatch(expr = {
+      irlba::irlba(log1p(dat), 10)$v
+    }, error = function(e) NA, warning = function(w) NA)
+
+    if(is.null(initial.labels) &amp; initial.round &gt; 0) {
+
+      initial_clusters &lt;- initialize_HIPPO(dat, initial.round = initial.round, stop_at = stop_at, Zscore.cutoff = Zscore.cutoff)
+      next_round_IDs &lt;- initial_clusters$next_round_IDs
+      res &lt;- initial_clusters
+
+      selected.gene.list &lt;- NULL
+      selected.gene.Zscore &lt;- NULL
+      cluster.heterogeneity.tracking &lt;- NULL
+
+      kkk &lt;- apply(first_pcs, 2, function(x){
+        tapply(x, next_round_IDs, var)
+      })
+      cluster.heterogeneity.tracking &lt;- apply(kkk, 1, sum)*table(next_round_IDs)
+
+      for(i.round in (initial.round + 1):K.round){
+
+        go_with_larger_varianceID &lt;- selectCluster_to_proceed(cluster.heterogeneity.tracking, next_round_IDs, cluster.size.cutoff = smallest.cluster.num)
+        selected.dat &lt;- dat[, next_round_IDs%in%go_with_larger_varianceID]
+        selected.res &lt;- select_features_full(selected.dat, Zscore.cutoff = Zscore.cutoff)
+        selected.ID &lt;- selected.res$selected
+        selected.Zscore &lt;- selected.res$Zscore
+
+        new.subset.dat &lt;- selected.dat[selected.ID, ]
+        clusterID &lt;- run_kmeans_clustering(new.subset.dat)
+
+        new.clusters.var &lt;- apply(first_pcs[next_round_IDs%in%go_with_larger_varianceID, ], 2, function(x){
+          tapply(x, clusterID, var)
+        })
+
+        next_round_IDs[next_round_IDs%in%go_with_larger_varianceID][clusterID == 2] &lt;- i.round + 1
+        res$sequence &lt;- c(res$sequence, go_with_larger_varianceID)
+
+        new.cluster.heterogeneity.tracking &lt;- apply(new.clusters.var, 1, sum)*table(clusterID)
+        cluster.heterogeneity.tracking[go_with_larger_varianceID] &lt;- new.cluster.heterogeneity.tracking[1]
+        cluster.heterogeneity.tracking &lt;- c(cluster.heterogeneity.tracking, new.cluster.heterogeneity.tracking[2])
+        names(cluster.heterogeneity.tracking)[i.round + 1] &lt;-  i.round + 1
+
+        selected.gene.list[[i.round]] &lt;- selected.ID
+        selected.gene.Zscore[[i.round]] &lt;- selected.Zscore
+
+      }
+
+      res$next_round_IDs &lt;- next_round_IDs
+      names(res$sequence) &lt;- 1:length(res$sequence)+2
+      res$selected.gene.list &lt;- selected.gene.list
+      res$selected.gene.Zscore &lt;- selected.gene.Zscore
+      res$type &lt;- &quot;Rooted&quot;
+      res$initial.clusters &lt;- NULL
+
+    }
+
+
+  }
+  time2 &lt;- Sys.time()
+  print(time2-time1)
+  saveRDS(res,&quot;/database/jiangxinyu/Result/Data/0516_Total_cojoint_res_400cells_random5000_improve0.8.rds&quot;)</code></pre>
+<p>After pruning the excess levels, 33 iterative clusters were obtained,
+and we defined 13 cell types by manually annotating cells based on the
+RNA expression of known marker genes. For multi-set sequencing, we used
+Archr (Methods) “addHarmony()” for sample-based batch correction and
+then used latent semantic index (LSI) to obtain low-dimensional
+embedding in RNA, ATAC, and combination, respectively.</p>
+<pre class="r"><code>library(Matrix)
+library(ggplot2)
+library(cowplot)
+library(Seurat)
+library(limma)
+library(scater)
+library(HIPPO)
+library(lightHippo)
+library(irlba)
+co_all &lt;-  readRDS(&quot;/database/wangrong/Results/0712_ATAC+RNA/Signac/co_joint/5.14_merge_cojoint.rds&quot;)
+n200 &lt;- readRDS(&quot;/database/jiangxinyu/Result/Data/0516_Total_cojoint_res_200cells_random5000_improve0.8.rds&quot;)
+n400 &lt;- readRDS(&quot;/database/jiangxinyu/Result/Data/0516_Total_cojoint_res_400cells_random5000_improve0.8.rds&quot;)
+visualize_hippo_hierarchy(n200)
+visualize_hippo_hierarchy(n400)
+co_all@meta.data$n200 &lt;- n200$next_round_IDs
+table(co_all@meta.data$n200)
+Idents(co_all) &lt;- co_all$n200
+pbmc.marker &lt;- read_excel(&quot;/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/hsPBMC_markers_v3--wangrong.xlsx&quot;)
+DotPlot(co_all, features = unique(pbmc.marker$Gene) ,col.min=-2, col.max=2)+ RotatedAxis()+ scale_color_gradient2(high=&quot;red&quot;,mid = &quot;pink&quot;,low =&quot;white&quot;, midpoint = 0)
+
+
+new.clusters_33 &lt;- cut_hierarchy(n200, K = 33, cut_sequence = TRUE)
+visualize_hippo_hierarchy(new.clusters_33)
+co_all@meta.data$n200_k33 &lt;- new.clusters_33$labels
+table(co_all@meta.data$n200_k33)
+Idents(co_all) &lt;- co_all$n200_k33
+DotPlot(co_all, features = unique(pbmc.marker$Gene) ,col.min=-2, col.max=2)+ RotatedAxis()+ scale_color_gradient2(high=&quot;red&quot;,mid = &quot;lightgrey&quot;,low =&quot;darkblue&quot;, midpoint = 0)
+DotPlot(co_all, features = unique(pbmc.marker[31:60,]$Gene),col.min=-2, col.max=2)+ RotatedAxis()+ scale_color_gradient2(high=&quot;red&quot;,mid = &quot;lightgrey&quot;,low =&quot;darkblue&quot;, midpoint = 0)
+DotPlot(co_all, features = c(&quot;CD3D&quot;,&quot;CD8A&quot;,&quot;CD8B&quot;,&quot;CD4&quot;,&quot;CD40LG&quot;,&quot;CCR7&quot;,&quot;CD27&quot;,&quot;MK167&quot;,&quot;CXCR5&quot;,&quot;FOXP3&quot;,&quot;GZMB&quot;,&quot;IFNG&quot;,&quot;TRDV2&quot;,&quot;TRGV9&quot;,&quot;TRAV1&quot;,&quot;NCAM1&quot;,&quot;NCR1&quot;,&quot;FCGR3A&quot;,&quot;IL2&quot;,&quot;IL1A&quot;,&quot;IL1B&quot;,&quot;IL10&quot;,&quot;IL22&quot;,&quot;TNF&quot;,&quot;LTA&quot;,&quot;IL4&quot;,&quot;IL5&quot;,&quot;IL13&quot;,&quot;IL17A&quot;,&quot;IL17F&quot;,&quot;IL21&quot;,&quot;IL12A&quot;,&quot;IL12B&quot;),scale = FALSE,col.min=-2, col.max=2,idents=c(&#39;3&#39;,&#39;4&#39;,&#39;5&#39;,&#39;6&#39;,&#39;7&#39;,&#39;10&#39;,&#39;9&#39;,&#39;12&#39;,&#39;13&#39;,&#39;16&#39;,&#39;17&#39;,&#39;18&#39;,&#39;19&#39;,&#39;22&#39;,&#39;23&#39;,&#39;25&#39;,&#39;26&#39;,&#39;27&#39;,&#39;30&#39;,&#39;32&#39;,&#39;33&#39;))+ RotatedAxis()+ scale_color_gradient2(high=&quot;red&quot;,mid = &quot;lightgrey&quot;,low =&quot;darkblue&quot;, midpoint = 0)
+
+
+reference &lt;- LoadH5Seurat(&quot;/database/wangrong/Results/0712_ATAC+RNA/HIPPO/pbmc_multimodal.h5seurat&quot;)
+pbmc3k &lt;- SCTransform(co_all, verbose = FALSE)
+anchors &lt;- FindTransferAnchors(
+  reference = reference,
+  query = pbmc3k,
+  normalization.method = &quot;SCT&quot;,
+  reference.reduction = &quot;spca&quot;,
+  dims = 1:50
+)
+pbmc3k &lt;- MapQuery(
+  anchorset = anchors,
+  query = pbmc3k,
+  reference = reference,
+  refdata = list(
+    celltype.l1 = &quot;celltype.l1&quot;,
+    celltype.l2 = &quot;celltype.l2&quot;,
+    predicted_ADT = &quot;ADT&quot;
+  ),
+  reference.reduction = &quot;spca&quot;, 
+  reduction.model = &quot;wnn.umap&quot;
+)
+
+p1 &lt;- DimPlot(pbmc3k, reduction = &quot;ref.umap&quot;, group.by = &quot;predicted.celltype.l2&quot;, label = TRUE, label.size = 3 ,repel = TRUE) + NoLegend()+ggsci::scale_color_igv()
+p2 &lt;- DimPlot(pbmc3k, reduction = &quot;ref.umap&quot;, group.by = &quot;n200_k33&quot;, label = TRUE, label.size = 3 ,repel = TRUE) + NoLegend()+ggsci::scale_color_igv()
+p1 + p2
+table(pbmc3k$n200_k33,pbmc3k$predicted.celltype.l2)
+b &lt;- table(pbmc3k$n200_k33,pbmc3k$predicted.celltype.l2)
+b &lt;- as.data.frame(b)
+colnames(b)&lt;-c(&quot;ours&quot;, &quot;azimuth&quot;, &#39;value&#39;)
+b&lt;-b %&gt;%group_by(ours) %&gt;%mutate(freq = value / sum(value))
+ggplot(a,aes(x=ours,y=azimuth,fill=freq))+
+  geom_tile(colour=&quot;white&quot;,size=0.2)+
+  scale_fill_distiller(palette = &quot;Spectral&quot;)+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+coord_fixed()
+
+#c
+c &lt;- table(pbmc3k$n200,pbmc3k$predicted.celltype.l2)
+c &lt;- as.data.frame(c)
+colnames(c)&lt;-c(&quot;ours&quot;, &quot;azimuth&quot;, &#39;value&#39;)
+c&lt;-c %&gt;%group_by(ours) %&gt;%mutate(freq = value / sum(value))
+ggplot(c,aes(x=ours,y=azimuth,fill=freq))+
+  geom_tile(colour=&quot;white&quot;,size=0.2)+
+  scale_fill_distiller(palette = &quot;Spectral&quot;)+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+coord_fixed()
+
+head(Idents(co_all))
+My_levels &lt;- c(&#39;1&#39;,&#39;14&#39;,&#39;20&#39;,&#39;31&#39;,&#39;11&#39;,&#39;2&#39;,&#39;8&#39;,&#39;28&#39;,&#39;21&#39;,&#39;29&#39;,&#39;6&#39;,&#39;15&#39;,&#39;24&#39;,&#39;9&#39;,&#39;27&#39;,&#39;4&#39;,&#39;7&#39;,&#39;12&#39;,&#39;16&#39;,&#39;23&#39;,&#39;33&#39;,&#39;5&#39;,&#39;18&#39;,&#39;32&#39;,&#39;22&#39;,&#39;3&#39;,&#39;17&#39;,&#39;25&#39;,&#39;26&#39;,&#39;10&#39;,&#39;13&#39;,&#39;30&#39;,&#39;19&#39;)
+Idents(co_all) &lt;- factor(Idents(co_all), levels= My_levels)
+new.cluster.ids &lt;- c(&quot;CD16+ Mono&quot;, &quot;CD14+ Mono_1&quot;,&quot;CD14+ Mono_2&quot;,&quot;CD14+ Mono_3&quot;,&quot;Plasmacytoid DC&quot;,   &quot;Naïve B_1&quot;, &quot;Naïve B_2&quot;,&quot;Naïve B_3&quot;,&quot;Memory B&quot;,&quot; Intermediate B&quot;, &quot;NK/NKT_1&quot;, &quot;NK/NKT_2&quot;, &quot;NK/NKT_3&quot;, &quot;Naïve CD8+ T cells_1&quot;, &quot;Naïve CD8+ T cells_2&quot;, &quot;CD8+ Tem_1&quot;, &quot;CD8+ Tem_2&quot;, &quot;CD8+ Tem_3&quot;, &quot;CD8+ Tem_4&quot;,&quot;CD8+ Tem_5&quot;, &quot;CD8+ Tem_6&quot;, &quot;Naïve CD4+ T cells_1&quot;,&quot;Naïve CD4+ T cells_2&quot;,&quot;Naïve CD4+ T cells_3&quot;,&quot;Treg&quot;, &quot;CD4+ Tcm_1&quot;,&quot;CD4+ Tcm_2&quot;, &quot;CD4+ Tcm_3&quot;, &quot;CD4+ Tcm_4&quot;,&quot;CD4+ Tcm_5&quot;,&quot;CD4+ Tcm_6&quot;, &quot;MAIT&quot;,&quot;CD14+ Mono_4&quot;)
+names(new.cluster.ids) &lt;- levels(co_all)
+rename_pbmc &lt;- RenameIdents(co_all, new.cluster.ids)
+
+new.cluster.ids &lt;- c(&quot;CD16+ Mono&quot;, &quot;CD14+ Mono&quot;,&quot;CD14+ Mono&quot;,&quot;CD14+ Mono&quot;,&quot;Plasmacytoid DC&quot;,   &quot;Naïve B&quot;, &quot;Naïve B&quot;,&quot;Naïve B&quot;,&quot;Memory B&quot;,&quot; Intermediate B&quot;, &quot;NK/NKT&quot;, &quot;NK/NKT&quot;, &quot;NK/NKT&quot;, &quot;Naïve CD8+ T cells&quot;, &quot;Naïve CD8+ T cells&quot;, &quot;CD8+ Tem&quot;, &quot;CD8+ Tem&quot;, &quot;CD8+ Tem&quot;, &quot;CD8+ Tem&quot;,&quot;CD8+ Tem&quot;, &quot;CD8+ Tem_6&quot;, &quot;Naïve CD4+ T cells&quot;,&quot;Naïve CD4+ T cells&quot;,&quot;Naïve CD4+ T cells&quot;,&quot;Treg&quot;, &quot;CD4+ Tcm&quot;,&quot;CD4+ Tcm&quot;, &quot;CD4+ Tcm&quot;, &quot;CD4+ Tcm&quot;,&quot;CD4+ Tcm&quot;,&quot;CD4+ Tcm&quot;, &quot;MAIT&quot;,&quot;CD14+ Mono&quot;)
+names(new.cluster.ids) &lt;- levels(rename_pbmc)
+rename_pbmc &lt;- RenameIdents(rename_pbmc, new.cluster.ids)
+saveRDS(rename_pbmc,&quot;/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/5.17.annotation.signac.RDS&quot;)
+metadata&lt;-rename_pbmc@meta.data
+
+library(ArchR)
+library(pheatmap)
+library(Seurat) 
+library(ggplot2)
+addArchRThreads(threads = 96)
+addArchRGenome(&quot;hg38&quot;)
+
+batch_list=list(&quot;M1-1&quot;,&quot;M1-2&quot;,&quot;M1-3&quot;,&quot;M1-4&quot;,&quot;M1-5&quot;,&quot;M1-6&quot;,&quot;M1-7&quot;,&quot;M1-8&quot;,&quot;M1-9&quot;,&quot;M1-10&quot;,
+&quot;M2-1&quot;,&quot;M2-2&quot;,&quot;M2-3&quot;,&quot;M2-4&quot;,&quot;M2-5&quot;,&quot;M2-6&quot;,&quot;M2-7&quot;,&quot;M2-8&quot;,&quot;M2-9&quot;,&quot;M2-10&quot;,&quot;M2-11&quot;,&quot;M2-12&quot;,
+&quot;M3-1&quot;,&quot;M3-2&quot;,&quot;M3-3&quot;,&quot;M3-4&quot;,&quot;M3-5&quot;,&quot;M3-6&quot;,&quot;M3-7&quot;,&quot;M3-8&quot;,&quot;M3-9&quot;,&quot;M3-10&quot;,
+&quot;M5-1&quot;,&quot;M5-2&quot;,&quot;M5-3&quot;,&quot;M5-4&quot;,&quot;M5-5&quot;,&quot;M5-6&quot;,&quot;M5-7&quot;,&quot;M5-8&quot;,&quot;M5-9&quot;,&quot;M5-10&quot;)
+
+name_list=c(&quot;M1-1&quot;,&quot;M1-2&quot;,&quot;M1-3&quot;,&quot;M1-4&quot;,&quot;M1-5&quot;,&quot;M1-6&quot;,&quot;M1-7&quot;,&quot;M1-8&quot;,&quot;M1-9&quot;,&quot;M1-10&quot;,
+&quot;M2-1&quot;,&quot;M2-2&quot;,&quot;M2-3&quot;,&quot;M2-4&quot;,&quot;M2-5&quot;,&quot;M2-6&quot;,&quot;M2-7&quot;,&quot;M2-8&quot;,&quot;M2-9&quot;,&quot;M2-10&quot;,&quot;M2-11&quot;,&quot;M2-12&quot;,
+&quot;M3-1&quot;,&quot;M3-2&quot;,&quot;M3-3&quot;,&quot;M3-4&quot;,&quot;M3-5&quot;,&quot;M3-6&quot;,&quot;M3-7&quot;,&quot;M3-8&quot;,&quot;M3-9&quot;,&quot;M3-10&quot;,
+&quot;M5-1&quot;,&quot;M5-2&quot;,&quot;M5-3&quot;,&quot;M5-4&quot;,&quot;M5-5&quot;,&quot;M5-6&quot;,&quot;M5-7&quot;,&quot;M5-8&quot;,&quot;M5-9&quot;,&quot;M5-10&quot;)
+
+arrowlist&lt;-c()
+for(i in 1:length(batch_list)){
+  arrowlist&lt;-c(arrowlist,paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/atac_output/ArrowFiles/&#39;,batch_list[[i]],&#39;.arrow&#39;))
+}                                       
+archrproj &lt;- ArchRProject(ArrowFiles = arrowlist,outputDirectory = &quot;/database/wangrong/Results/0712_ATAC+RNA/atac_output&quot;,copyArrows = FALSE)
+archrproj
+
+atac_input&lt;-c()
+for(i in 1:length(batch_list)){
+  atac_input&lt;-c(atac_input,paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/&#39;,batch_list[[i]],&#39;/outs/atac_fragments.tsv.gz&#39;))
+}
+ArrowFiles&lt;- createArrowFiles(inputFiles = atac_input,sampleNames = name_list)
+
+rna_input&lt;-c()
+for(i in 1:length(batch_list)){
+  rna_input&lt;-c(rna_input,paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/&#39;,batch_list[[i]],&#39;/outs/filtered_feature_bc_matrix.h5&#39;))
+}
+seRNA &lt;- import10xFeatureMatrix(input = rna_input,names = name_list,featureType = &quot;Gene Expression&quot;)
+
+projpbmc &lt;- ArchRProject(ArrowFiles = ArrowFiles,outputDirectory = &quot;/database/wangrong/Results/0712_ATAC+RNA/atac_output&quot;)
+new_ArrowFiles&lt;-addGeneExpressionMatrix(input=projpbmc, seRNA=seRNA)
+proj &lt;- new_ArrowFiles
+saveRDS(proj,&quot;/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/5.24.arch.RDS&quot;,compress =  F)
+metadata&lt;-read.table(&#39;/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/sample_metadata.csv&#39;, sep = &quot;,&quot;, header = TRUE)
+rownames(metadata) &lt;- gsub(&quot;_&quot;,&quot;#&quot;,rownames(metadata))
+length(rownames(metadata))
+a &lt;- rownames(metadata)
+b &lt;- a[!is.na(match(a,getCellNames(proj)))]
+proj &lt;- subsetArchRProject(proj,cells = b,outputDirectory = &quot;/database/wangrong/Results/0712_ATAC+RNA/atac_output/ArchRSubset&quot;)
+dim(metadata[!is.na(match(rownames(metadata),b)),])
+c=metadata[!is.na(match(rownames(metadata),b)),]
+proj &lt;- addCellColData(ArchRProj = proj,data = c$annotation,name = &quot;annotation&quot;,cells = getCellNames(proj),force = FALSE)
+proj &lt;- addCellColData(ArchRProj = proj,data = c$celltype,name = &quot;celltype&quot;,cells = getCellNames(proj),force = FALSE)
+proj &lt;- addIterativeLSI(ArchRProj = proj, clusterParams = list(resolution = 0.2, sampleCells = 10000,n.start = 10),saveIterations = FALSE,useMatrix = &quot;TileMatrix&quot;, depthCol = &quot;nFrags&quot;,name = &quot;LSI_ATAC&quot;)
+proj &lt;- addIterativeLSI(ArchRProj = proj, clusterParams = list(resolution = 0.2, sampleCells = 10000,n.start = 10),saveIterations = FALSE,useMatrix = &quot;GeneExpressionMatrix&quot;, depthCol = &quot;Gex_nUMI&quot;,varFeatures = 2500,firstSelection = &quot;variable&quot;,binarize = FALSE,name = &quot;LSI_RNA&quot;)
+#Combined Dims
+proj &lt;- addCombinedDims(proj, reducedDims = c(&quot;LSI_ATAC&quot;, &quot;LSI_RNA&quot;), name =  &quot;LSI_Combined&quot;)
+proj &lt;- addUMAP(proj, reducedDims = &quot;LSI_ATAC&quot;, name = &quot;UMAP_ATAC&quot;, minDist = 0.8, force = TRUE)
+proj &lt;- addUMAP(proj, reducedDims = &quot;LSI_RNA&quot;, name = &quot;UMAP_RNA&quot;, minDist = 0.8, force = TRUE)
+proj &lt;- addUMAP(proj, reducedDims = &quot;LSI_Combined&quot;, name = &quot;UMAP_Combined&quot;, minDist = 0.8, force = TRUE)
+proj &lt;- addHarmony(ArchRProj = proj,reducedDims = &quot;IterativeLSI&quot;,name = &quot;Harmony&quot;,groupBy = &quot;Sample&quot;)
+proj &lt;- addClusters(proj, reducedDims = &quot;IterativeLSI&quot;, name = &quot;Clusters&quot;, resolution = 0.4, force = TRUE)
+p1 &lt;- plotEmbedding(archrproj, name = &quot;celltype&quot;, embedding = &quot;UMAP_ATAC&quot;, pal=c13_match,colorBy = &quot;cellColData&quot;,size = 0.8, labelAsFactors=F, labelMeans=F)
+p2 &lt;- plotEmbedding(archrproj, name = &quot;celltype&quot;, embedding = &quot;UMAP_RNA&quot;,pal=c13_match,colorBy = &quot;cellColData&quot;,size = 0.8, labelAsFactors=F, labelMeans=F)
+p3 &lt;- plotEmbedding(archrproj, name = &quot;celltype&quot;, embedding = &quot;IterativeLSI&quot;,pal=c13_match,colorBy = &quot;cellColData&quot;,size = 0.8, labelAsFactors=F, labelMeans=F)
+plotPDF(p1, p2, p3, name = &quot;6.30_UMAP-scATAC-scRNA-Harmony_celltype&quot;, addDOC = FALSE)
+#callpeak
+archrproj &lt;- addGroupCoverages(ArchRProj = proj, groupBy = &quot;celltype&quot;,force = TRUE)
+pathToMacs2 &lt;- &quot;/home/wangrong/.local/bin/macs2&quot;
+archrproj &lt;- addReproduciblePeakSet(ArchRProj = archrproj,groupBy = &quot;celltype&quot;,pathToMacs2 = pathToMacs2)
+archrproj &lt;- addPeakMatrix(archrproj)
+saveRDS(archrproj,&quot;/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/6.14.Archr_call_peak.RDS&quot;,compress = F)</code></pre>
+</div>
+<div
+id="differential-gene-expression-and-differential-peak-accessibility."
+class="section level2">
+<h2>Differential gene expression and differential peak
+accessibility.</h2>
+<pre class="r"><code>##finding and Visualizing Marker Genes on an Embedding
+markersGE &lt;- getMarkerFeatures(ArchRProj = archrproj, useMatrix = &quot;GeneExpressionMatrix&quot;, groupBy = &quot;celltype&quot;,testMethod = &quot;wilcoxon&quot;)
+markerList &lt;- getMarkers(markersGE, cutOff = &quot;FDR &lt;= 0.01 &amp; Log2FC &gt;= 1.25&quot;)
+pbmc.marker &lt;- read_excel(&quot;/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/hsPBMC_markers_v3--wangrong.xlsx&quot;)
+heatmapGE &lt;- markerHeatmap(seMarker = markersGE, cutOff = &quot;FDR &lt;= 0.01 &amp; Log2FC &gt;= 1.25&quot;, labelMarkers = unique(pbmc.marker$Gene,transpose = TRUE))
+ComplexHeatmap::draw(heatmapGE, heatmap_legend_side = &quot;bot&quot;, annotation_legend_side = &quot;bot&quot;)
+plotPDF(heatmapGE, name = &quot;6.14_Expression-Marker-Heatmap&quot;, width = 8, height = 10, ArchRProj = archrproj, addDOC = TRUE)
+
+markersPeaks &lt;- getMarkerFeatures(ArchRProj = archrproj, useMatrix = &quot;PeakMatrix&quot;, groupBy = &quot;celltype&quot;,bias = c(&quot;TSSEnrichment&quot;, &quot;log10(nFrags)&quot;),testMethod = &quot;wilcoxon&quot;)
+markerList_peak &lt;- getMarkers(markersPeaks, cutOff = &quot;FDR &lt;= 0.01 &amp; Log2FC &gt;= 1&quot;, returnGR = TRUE)
+heatmapPeaks &lt;- markerHeatmap(seMarker = markersPeaks, cutOff = &quot;FDR &lt;= 0.1 &amp; Log2FC &gt;= 0.5&quot;,transpose = TRUE)
+plotPDF(heatmapPeaks, name = &quot;6.14_Peak-Marker-Heatmap&quot;, width = 8, height = 10, ArchRProj = archrproj, addDOC = TRUE)
+
+##Motif and Feature Enrichment 
+motif_archr&lt;- addMotifAnnotations(ArchRProj = archrproj, motifSet = &quot;cisbp&quot;, name = &quot;Motif&quot;,force = TRUE)
+enrichMotifs &lt;- peakAnnoEnrichment(seMarker = markersPeaks,ArchRProj = motif_archr,peakAnnotation = &quot;Motif&quot;,cutOff = &quot;FDR &lt;= 0.1 &amp; Log2FC &gt;= 0.5&quot;)
+heatmapEM &lt;- plotEnrichHeatmap(enrichMotifs, n = 7, transpose = TRUE)
+ComplexHeatmap::draw(heatmapEM, heatmap_legend_side = &quot;bot&quot;, annotation_legend_side = &quot;bot&quot;)
+plotPDF(heatmapEM, name = &quot;6.14_Motifs-Enriched-Marker-Heatmap&quot;, width = 8, height = 6, ArchRProj = motif_archr, addDOC = FALSE)
+##ChromVAR Deviatons Enrichment 
+motif_archr &lt;- addBgdPeaks(motif_archr)
+motif_archr &lt;- addDeviationsMatrix(ArchRProj = motif_archr, peakAnnotation = &quot;Motif&quot;,force = TRUE)
+plotVarDev &lt;- getVarDeviations(motif_archr, name = &quot;MotifMatrix&quot;, plot = TRUE)
+plotVarDev
+plotPDF(plotVarDev, name = &quot;Variable-Motif-Deviation-Scores&quot;, width = 5, height = 5, ArchRProj = motif_archr, addDOC = FALSE)</code></pre>
+</div>
+<div id="comparing-immune-cell-proportion" class="section level2">
+<h2>Comparing immune cell proportion</h2>
+<p>For each time point in each participant, cell type proportions were
+calculated by dividing the number of cells in a particular cell type by
+the total number of cells in a single participant. To determine the
+changes in the proportions of different antibody levels and cells, we
+also plotted a line graph of the changes in antibody levels. Cell type
+abundance counts were modeled as a function of either timepoints (as an
+ordinal variable:
+(Day0&gt;Day1&gt;Day3&gt;Day6&gt;Day14&gt;Day30&gt;Day31&gt;Day33&gt;Day36&gt;Day44),
+in a negative binomial generalized linear model (NB GLM), implemented in
+the Bioconductor package edgeR. Counts were normalized in the model
+using the (log) of the total numbers of all cells captured for each
+donor. We performed hypothesis testing using a quasi-likelihood F-test,
+comparing post-vaccination time-points with day 0 controls to identify
+linear trends across vaccination time points.
+(Day0&gt;Day1&gt;Day3&gt;Day6&gt;Day14&gt;Day30&gt;Day31&gt;Day33&gt;Day36&gt;Day44).
+Differentially abundant cell types were determined using a 10% FDR.</p>
+<pre class="r"><code>rename_pbmc&lt;-readRDS(&quot;/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/5.19.peak_to_gene.RDS&quot;)
+pro &lt;- table(rename_pbmc$annotation,rename_pbmc$Timepoints)
+pro_ra &lt;- prop.table(pro_1,1)
+pro_2 &lt;- as.data.frame(pro_ra)
+pro_2$Var2 &lt;- factor(pro_2$Var2,levels=c(&quot;Day0&quot;,&quot;Day1&quot;,&quot;Day3&quot;,&quot;Day6&quot;,&quot;Day14&quot;,&quot;Day30&quot;,&quot;Day31&quot;,&quot;Day33&quot;,&quot;Day36&quot;,&quot;Day44&quot;,&quot;Day171&quot;,&quot;Day185&quot;))
+pro_2$Var3 &lt;- factor(pro_2$Var3,levels=c(&quot;Naïve B&quot;,&quot; Intermediate B&quot;,&quot;Plasmablasts/Memory B&quot;,&quot;Naïve CD4+ T cells&quot;,&quot;CD4+ Tcm&quot;,&quot;Treg&quot;,&quot;Naïve CD8+ T cells&quot;,&quot;CD8+ Tem&quot;,&quot;MAIT&quot;,&quot;NK/NKT&quot; ,&quot;CD14+ Mono&quot;,&quot;CD16+ Mono&quot;,&quot;Plasmacytoid DC&quot;))
+b6&lt;-brewer.pal(12,&quot;Paired&quot;)
+b7&lt;-brewer.pal(8,&quot;Set2&quot;)
+c&lt;-c(b6[c(1,2,3,4,5,7,8,9,10,11,12)],b7)
+ggplot(pro_2,aes(x=Var2,y=ratio,colour=Var1,group=Var1,fill=Var1,shape=Var2)) +
+  facet_wrap(Var3~.,scale=&quot;free_y&quot;)+
+  scale_shape_manual(values = c(20,20,20,20,20,20,20,20,20,20))+
+  geom_line(size =0.8)+
+  geom_point(size=3)+
+  theme(axis.line = element_line(colour = &quot;black&quot;))+
+  labs( x = &#39;Cell types&#39;, y = &#39;Cell proportion&#39;)+
+  scale_color_manual(values = b7)+
+  theme_bw()+
+  theme(axis.title = element_text(size=20),panel.grid=element_blank())+
+  theme(axis.text.x = element_text(angle = 45,size = rel(1.2)))+
+  theme(axis.text.y= element_text(size = rel(1.2)))
+abundances &lt;- unclass(pro) 
+class(abundances)
+y.ab &lt;- DGEList(counts=abundances, samples=extra.info)</code></pre>
+</div>
+<div id="analysis-of-gene-sharing-across-cell-types"
+class="section level2">
+<h2>Analysis of gene sharing across cell types</h2>
+<p>To accommodate for time and individual diversity in our dataset, we
+developed a new method for analyzing co-expressed genes, based on the
+concept of hierarchical clustering. We divide the large matrix into
+smaller chunks to save it as a CSV file.</p>
+<pre class="r"><code>library(log4r)
+library(Seurat)
+library(data.table)
+
+## We divide the large matrix into smaller chunks to save it as a CSV file.
+write_sparse_csv &lt;- function(x, file, ..., chunk = 1000){
+  passes &lt;- ncol(x) %/% chunk
+  remaining &lt;- ncol(x) %% chunk
+  if(passes &gt; 0){
+    idx &lt;- seq_len(chunk)
+    y &lt;- x[ , idx, drop = FALSE]
+    y &lt;- as.matrix(y)
+    passes &lt;- passes - 1L
+    for(i in seq_len(passes)){
+      idx &lt;- idx + chunk
+      tmp &lt;- x[ , idx, drop = FALSE]
+      tmp &lt;- as.matrix(tmp)
+      y &lt;- data.frame(y, tmp)
+    }
+    if(remaining &gt; 0){
+      p &lt;- idx[chunk] + 1
+      q &lt;- idx[chunk] + remaining
+      tmp &lt;- x[ , p:q, drop = FALSE]
+      tmp &lt;- as.matrix(tmp)
+      y &lt;- data.frame(y, tmp)
+      y &lt;- t(y)
+      y &lt;- as.data.frame(y)
+      fwrite(y, file, sep = &quot;,&quot;, col.names = TRUE, row.names = TRUE)
+    }
+  } 
+}
+
+## extract the necessary data from the RDS file, including:
+## 1. gene expression data
+## 2. samples metadata
+rnaData &lt;- readRDS(&#39;/database/findCoexpressionGenes/data/5.18.annotation.signac.RDS&#39;)
+geneExpression &lt;- rnaData@assays$RNA
+geneExpression &lt;- geneExpression@data
+metadata &lt;- rnaData@meta.data
+## delete the variable, free up memory.
+rm(rnaData)
+gc()
+
+## create a log to record the outputs
+path = &#39;database/findCoexpressionGenes/logs/01_dataPreprocess.txt&#39;
+create.logger(path, level = 2) 
+appender = file_appender(path)
+
+## save data as CSV files
+appender(level = &#39;INFO&#39;, &#39;Start saving geneExpression.csv.&#39;)
+write_sparse_csv(geneExpression, &#39;/database/findCoexpressionGenes/outputs/geneExpression.csv&#39;)
+appender(level = &#39;INFO&#39;, &#39;geneExpression.csv was saved.&#39;)
+
+appender(level = &#39;INFO&#39;, &#39;Start saving metaData.csv.&#39;)
+write.csv(metadata, &#39;/database/findCoexpressionGenes/outputs/metaData.csv&#39;)
+appender(level = &#39;INFO&#39;, &#39;metaData.csv was saved.&#39;)
+
+rm(geneExpression, metadata)
+gc()
+
+## merge data by barcode information
+appender(level = &#39;INFO&#39;, &#39;Start merging data.&#39;)
+data &lt;- fread(&#39;/database/findCoexpressionGenes/outputs/geneExpression.csv&#39;)
+meta &lt;- fread(&#39;/database/findCoexpressionGenes/outputs/metaData.csv&#39;)
+meta$V1 &lt;- gsub(&quot;-&quot;,&quot;\\.&quot;,meta$V1)
+all &lt;- merge.data.table(meta, data, by = &#39;V1&#39;)
+fwrite(all, &#39;/database/findCoexpressionGenes/outputs/all.csv&#39;, col.names = TRUE)
+appender(level = &#39;INFO&#39;, &#39;Merged-data was saved!.&#39;)</code></pre>
+<p>In the first step, we calculated the average expression of genes at
+each time point in different types of cells under different individuals
+as the smallest unit for co-expression analysis.</p>
+<pre class="r"><code>library(data.table)
+
+people &lt;- c(&#39;P1&#39;, &#39;P2&#39;, &#39;P3&#39;, &#39;P4&#39;)
+# celltypes &lt;- c(&#39;Naïve CD4+ T cells&#39;, &#39;Naïve CD8+ T cells&#39;, &#39;NK/NKT&#39;, &#39;Memory B&#39;, &#39;Naïve B&#39;,
+#                &#39;Intermediate B&#39;, &#39;CD14+ Mono&#39;, &#39;CD16+ Mono&#39;, &#39;CD4+ Tcm&#39;, &#39;Plasmacytoid DC&#39;, &#39;Treg&#39;, 
+#                &#39;CD8+ Tem&#39;, &#39;MAIT&#39;)
+
+print(&#39;Loading all.csv file.&#39;)
+t1 &lt;- proc.time()
+data &lt;- fread(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/all.csv&#39;)
+t2 &lt;- proc.time()
+t &lt;- t2 - t1
+print(paste0(&#39;Down! Time taken: &#39;, t[3][[1]] / 60, &#39; mins&#39;))
+for (person in people){
+  print(paste0(&#39;Start processing &#39;, person))
+  t3 &lt;- proc.time()
+  persondata &lt;- data[Participants == person]
+  # for (type in celltypes){
+  type &lt;- &#39;Eryth/Platelet CD14+ Mono new&#39;
+  print(paste0(&#39;Start processing &#39;, type, &#39; of &#39;, person))
+  t4 &lt;- proc.time()
+  df &lt;- persondata[celltype %chin% c(&#39;Eryth/Platelet&#39;,&#39;CD14+ Mono&#39;), 
+            !c(&quot;V1&quot;, &quot;orig.ident&quot;, &quot;nCount_RNA&quot;, &quot;nFeature_RNA&quot;, &quot;percent.mt&quot;, &quot;RNA_snn_res.0.3&quot;, &quot;seurat_clusters&quot;,
+                &quot;Dlabel&quot;, &quot;nCount_ATAC&quot;, &quot;nFeature_ATAC&quot;, &quot;nucleosome_signal&quot;, &quot;Participants&quot;,
+                &quot;nucleosome_percentile&quot;, &quot;TSS.enrichment&quot;, &quot;TSS.percentile&quot;, &quot;n200&quot;, &quot;n200_k33&quot;, &quot;annotation&quot;, &quot;celltype&quot;)]
+  df &lt;- df[, lapply(.SD, mean, na.rm = TRUE), by = Timepoints]
+  for (i in 1:nrow(df)){
+    if (df[, 1][i] == &#39;Day0&#39;){
+      df[, 1][i] = 0
+    }else if (df[, 1][i] == &#39;Day1&#39;){
+      df[, 1][i] = 1
+    }else if (df[, 1][i] == &#39;Day3&#39;){
+      df[, 1][i] = 3
+    }else if (df[, 1][i] == &#39;Day6&#39;){
+      df[, 1][i] = 6
+    }else if (df[, 1][i] == &#39;Day14&#39;){
+      df[, 1][i] = 14
+    }else if (df[, 1][i] == &#39;Day30&#39;){
+      df[, 1][i] = 30
+    }else if (df[, 1][i] == &#39;Day31&#39;){
+      df[, 1][i] = 31
+    }else if (df[, 1][i] == &#39;Day33&#39;){
+      df[, 1][i] = 33
+    }else if (df[, 1][i] == &#39;Day36&#39;){
+      df[, 1][i] = 36
+    }else if (df[, 1][i] == &#39;Day44&#39;){
+      df[, 1][i] = 44
+    }else if (df[, 1][i] == &#39;Day171&#39;){
+      df[, 1][i] = 171
+    }else if (df[, 1][i] == &#39;Day185&#39;){
+      df[, 1][i] = 185
+    }
+  }
+  df$Timepoints &lt;- as.numeric(df$Timepoints)
+  df &lt;- df[order(df$Timepoints)]
+  type &lt;- gsub(&#39; &#39;,&#39;_&#39;,type)
+  type &lt;- gsub(&#39;/&#39;, &#39;_&#39;, type)
+  path &lt;- paste0(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/byPeople/&#39;,person,&#39;_&#39;,type,&#39;.csv&#39;)
+  fwrite(df, path)
+  t5 &lt;- proc.time()
+  t &lt;- t5 - t4
+  print(paste0(type, &#39; of &#39;, person, &#39; was down! Time taken: &#39;,  t[3][[1]] / 60, &#39; mins&#39;))
+# }
+  t6 &lt;- proc.time()
+  t &lt;- t6 - t3
+  print(paste0(person, &#39; was down! Time taken: &#39;,  t[3][[1]] / 60, &#39; mins&#39;))
+}
+
+t7 &lt;- proc.time()
+t &lt;- t7 - t1
+print(paste0(&#39;All time spend: &#39;,  t[3][[1]] / 60, &#39; mins&#39;))</code></pre>
+<p>In the second step, we performed feature engineering. Since we were
+interested in the change trends of gene expression, we first calculated
+the slope between gene expression at two neighboring time points, which
+was used to depict changes on a partial level.</p>
+<pre class="r"><code># 计算斜率数据，包括跨一个点的斜率
+
+library(data.table)
+
+# celltypes &lt;- c(&#39;Naïve CD4+ T cells&#39;, &#39;Naïve CD8+ T cells&#39;, &#39;NK/NKT&#39;, &#39;Plasmablasts/Memrary B&#39;, &#39;Naïve B&#39;,
+#                  &#39;Intermediate B&#39;, &#39;CD14+ Mono&#39;, &#39;CD16+ Mono&#39;, &#39;CD4+ Tcm&#39;, &#39;Plasmacytoid DC&#39;, &#39;Treg&#39;, 
+#                  &#39;CD8+ Tem&#39;, &#39;MAIT&#39;)
+
+print(&#39;Loading all.csv file.&#39;)
+t1 &lt;- proc.time()
+data &lt;- fread(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/all.csv&#39;)
+t2 &lt;- proc.time()
+t &lt;- t2 - t1
+print(paste0(&#39;Down! Time taken: &#39;, t[3][[1]] / 60, &#39; mins&#39;))
+
+# for (type in celltypes){
+type &lt;- &#39;Eryth/Platelet CD14+ Mono new&#39;
+print(paste0(&#39;Start processing &#39;, type))
+t3 &lt;- proc.time()
+
+# 选取特定类型(type)的细胞，删除不需要的列
+df &lt;- data[celltype %chin% c(&#39;Eryth/Platelet&#39;, &#39;CD14+ Mono&#39;), 
+                 !c(&quot;V1&quot;, &quot;orig.ident&quot;, &quot;nCount_RNA&quot;, &quot;nFeature_RNA&quot;, &quot;percent.mt&quot;, &quot;RNA_snn_res.0.3&quot;, &quot;seurat_clusters&quot;,
+                    &quot;Dlabel&quot;, &quot;nCount_ATAC&quot;, &quot;nFeature_ATAC&quot;, &quot;nucleosome_signal&quot;, 
+                    &quot;nucleosome_percentile&quot;, &quot;TSS.enrichment&quot;, &quot;TSS.percentile&quot;, &quot;n200&quot;, &quot;n200_k33&quot;, &quot;annotation&quot;, &quot;celltype&quot;)]
+df1 &lt;- df[Participants %chin% c(&#39;P1&#39;, &#39;P3&#39;, &#39;P4&#39;)]
+
+# 对于P2，剔除数据质量差的Day1、Day3、Day171、Day185四个时间点的数据
+df2 &lt;- subset(df, Participants == &#39;P2&#39; &amp; Timepoints %chin% c(&#39;Day0&#39;, &#39;Day6&#39;,&#39;Day14&#39;,&#39;Day30&#39;,&#39;Day31&#39;,&#39;Day33&#39;,&#39;Day36&#39;,&#39;Day44&#39;))
+df &lt;- rbind(df1, df2)
+df &lt;- df[, !c(&#39;Participants&#39;)]
+
+# 求该细胞类型所有基因不同时间点的平均表达量
+df &lt;- df[, lapply(.SD, mean, na.rm = TRUE), by = Timepoints]
+
+# 按时间点升序排列
+for (i in 1:nrow(df)){
+  if (df[, 1][i] == &#39;Day0&#39;){
+    df[, 1][i] = 0
+  }else if (df[, 1][i] == &#39;Day1&#39;){
+    df[, 1][i] = 1
+  }else if (df[, 1][i] == &#39;Day3&#39;){
+    df[, 1][i] = 3
+  }else if (df[, 1][i] == &#39;Day6&#39;){
+    df[, 1][i] = 6
+  }else if (df[, 1][i] == &#39;Day14&#39;){
+    df[, 1][i] = 14
+  }else if (df[, 1][i] == &#39;Day30&#39;){
+    df[, 1][i] = 30
+  }else if (df[, 1][i] == &#39;Day31&#39;){
+    df[, 1][i] = 31
+  }else if (df[, 1][i] == &#39;Day33&#39;){
+    df[, 1][i] = 33
+  }else if (df[, 1][i] == &#39;Day36&#39;){
+    df[, 1][i] = 36
+  }else if (df[, 1][i] == &#39;Day44&#39;){
+    df[, 1][i] = 44
+  }
+}
+df$Timepoints &lt;- as.numeric(df$Timepoints)
+df &lt;- df[order(df$Timepoints),]
+
+# 保存该细胞类型所有基因不同时间点的平均表达量为csv文件
+type &lt;- gsub(&#39; &#39;,&#39;_&#39;,type)
+type &lt;- gsub(&#39;/&#39;, &#39;_&#39;, type)
+path &lt;- paste0(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/gex_&#39;,type,&#39;.csv&#39;)
+fwrite(df, path)
+
+# 计算斜率，slope_NED存放不等距斜率，slope_ED存放等距斜率
+x &lt;- df$Timepoints
+num &lt;- 1
+genes &lt;- colnames(df)
+slope_NED &lt;- data.table()
+slope_ED &lt;- data.table()
+for (i in 2:length(genes)){
+  y &lt;- df[[i]]
+  
+  # 非跨点斜率，包含翻转
+  for (j in 1:(length(y)-1)){
+    tmp1 &lt;- (y[j+1] - y[j]) / (x[j+1] - x[j])
+    if (j == 1){
+      slope1 &lt;- tmp1
+      slope1_flip &lt;- -tmp1
+    }else{
+      slope1 &lt;- c(slope1, tmp1)
+      slope1_flip &lt;- c(slope1_flip, -tmp1)
+    }
+    
+    tmp2 &lt;- (y[j+1] - y[j])
+    if (j == 1){
+      slope2 &lt;- tmp2
+      slope2_flip &lt;- -tmp2
+    }else{
+      slope2 &lt;- c(slope2, tmp2)
+      slope2_flip &lt;- c(slope2_flip, -tmp2)
+    }
+  }
+  
+  # 跨一个点的斜率，包括翻转
+  for (j in 1:(length(y)-2)){
+    tmp1 &lt;- (y[j+2] - y[j]) / (x[j+2] - x[j])
+    slope1 &lt;- c(slope1, tmp1)
+    slope1_flip &lt;- c(slope1_flip, -tmp1)
+    
+    tmp2 &lt;- (y[j+2] - y[j])
+    slope2 &lt;- c(slope2, tmp2)
+    slope2_flip &lt;- c(slope2_flip, -tmp2)
+  }
+  
+  slope_NED[, genes[i]:= slope1]
+  slope_NED[, paste0(genes[i],&#39;_flip&#39;):= slope1_flip]
+  slope_ED[, genes[i]:= slope2]
+  slope_ED[, paste0(genes[i],&#39;_flip&#39;):= slope2_flip]
+  if (num %% 2000 == 0 | num == length(genes)){
+    print(num)
+  }
+  num &lt;- num + 1
+}
+
+path1 &lt;- paste0(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getSlope/&#39;,&#39;Slope_&#39;,type,&#39;_ED.csv&#39;)
+path2 &lt;- paste0(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getSlope/&#39;,&#39;Slope_&#39;,type,&#39;_NED.csv&#39;)
+fwrite(slope_ED, path1)
+fwrite(slope_NED, path2)
+t4 &lt;- proc.time()
+t &lt;- t4 - t3
+print(paste0(type, &#39; was down! Time taken: &#39;,  t[3][[1]] / 60, &#39; mins&#39;))
+rm(df, df1, df2, slope_ED, slope_NED, path1, path2)
+gc()
+# }
+
+t5 &lt;- proc.time()
+t &lt;- t5 - t1
+print(paste0(&#39;All time spend: &#39;,  t[3][[1]] / 60, &#39; mins&#39;))</code></pre>
+<p>Next, we calculated the slope between two time points with a time
+interval of one point to ensure that the overall trends were similar.
+Additionally, considering that gene expression can be either
+up-regulated or down-regulated, we included the opposite numbers
+corresponding to each slope in the analysis.</p>
+<pre class="r"><code># 计算差异系数(coefficient of variation)
+
+library(data.table)
+
+# celltypes &lt;- c(&#39;Naïve CD4+ T cells&#39;, &#39;Naïve CD8+ T cells&#39;, &#39;NK/NKT&#39;, &#39;Plasmablasts/Memrary B&#39;, &#39;Naïve B&#39;,
+#                &#39;Intermediate B&#39;, &#39;CD14+ Mono&#39;, &#39;CD16+ Mono&#39;, &#39;CD4+ Tcm&#39;, &#39;Plasmacytoid DC&#39;, &#39;Treg&#39;, 
+#                 &#39;CD8+ Tem&#39;, &#39;MAIT&#39;)
+
+print(&#39;Loading all.csv file.&#39;)
+t1 &lt;- proc.time()
+data &lt;- fread(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/all.csv&#39;)
+t2 &lt;- proc.time()
+t &lt;- t2 - t1
+print(paste0(&#39;Down! Time taken: &#39;, t[3][[1]] / 60, &#39; mins&#39;))
+
+# for (type in celltypes){
+type &lt;- &#39;Eryth/Platelet CD14+ Mono new&#39;
+print(paste0(&#39;Start processing &#39;, type))
+t3 &lt;- proc.time()
+
+# 选取特定类型(type)的细胞，删除不需要的列
+df &lt;- data[celltype %chin% c(&#39;Eryth/Platelet&#39;,&#39;CD14+ Mono&#39;), 
+           !c(&quot;V1&quot;, &quot;orig.ident&quot;, &quot;nCount_RNA&quot;, &quot;nFeature_RNA&quot;, &quot;percent.mt&quot;, &quot;RNA_snn_res.0.3&quot;, &quot;seurat_clusters&quot;,
+              &quot;Dlabel&quot;, &quot;nCount_ATAC&quot;, &quot;nFeature_ATAC&quot;, &quot;nucleosome_signal&quot;, 
+              &quot;nucleosome_percentile&quot;, &quot;TSS.enrichment&quot;, &quot;TSS.percentile&quot;, &quot;n200&quot;, &quot;n200_k33&quot;, &quot;annotation&quot;, &quot;celltype&quot;)]
+df1 &lt;- df[Participants %chin% c(&#39;P1&#39;, &#39;P3&#39;, &#39;P4&#39;)]
+
+# 对于P2，剔除数据质量差的Day1、Day3、Day171、Day185四个时间点的数据
+df2 &lt;- subset(df, Participants == &#39;P2&#39; &amp; Timepoints %chin% c(&#39;Day0&#39;, &#39;Day6&#39;,&#39;Day14&#39;,&#39;Day30&#39;,&#39;Day31&#39;,&#39;Day33&#39;,&#39;Day36&#39;,&#39;Day44&#39;))
+df &lt;- rbind(df1, df2)
+df &lt;- df[, !c(&#39;Participants&#39;)]
+
+# 求该细胞类型所有基因不同时间点的平均表达量及表达量标准差
+meandf &lt;- df[, lapply(.SD, mean, na.rm = TRUE), by = Timepoints]
+sddf &lt;- df[, lapply(.SD, sd, na.rm = TRUE), by = Timepoints]
+
+# 按时间点升序排列
+for (i in 1:nrow(meandf)){
+  if (meandf[, 1][i] == &#39;Day0&#39;){
+    meandf[, 1][i] = 0
+  }else if (meandf[, 1][i] == &#39;Day1&#39;){
+    meandf[, 1][i] = 1
+  }else if (meandf[, 1][i] == &#39;Day3&#39;){
+    meandf[, 1][i] = 3
+  }else if (meandf[, 1][i] == &#39;Day6&#39;){
+    meandf[, 1][i] = 6
+  }else if (meandf[, 1][i] == &#39;Day14&#39;){
+    meandf[, 1][i] = 14
+  }else if (meandf[, 1][i] == &#39;Day30&#39;){
+    meandf[, 1][i] = 30
+  }else if (meandf[, 1][i] == &#39;Day31&#39;){
+    meandf[, 1][i] = 31
+  }else if (meandf[, 1][i] == &#39;Day33&#39;){
+    meandf[, 1][i] = 33
+  }else if (meandf[, 1][i] == &#39;Day36&#39;){
+    meandf[, 1][i] = 36
+  }else if (meandf[, 1][i] == &#39;Day44&#39;){
+    meandf[, 1][i] = 44
+  }
+}
+meandf$Timepoints &lt;- as.numeric(meandf$Timepoints)
+meandf &lt;- meandf[order(meandf$Timepoints)]
+
+for (i in 1:nrow(sddf)){
+  if (sddf[, 1][i] == &#39;Day0&#39;){
+    sddf[, 1][i] = 0
+  }else if (sddf[, 1][i] == &#39;Day1&#39;){
+    sddf[, 1][i] = 1
+  }else if (sddf[, 1][i] == &#39;Day3&#39;){
+    sddf[, 1][i] = 3
+  }else if (sddf[, 1][i] == &#39;Day6&#39;){
+    sddf[, 1][i] = 6
+  }else if (sddf[, 1][i] == &#39;Day14&#39;){
+    sddf[, 1][i] = 14
+  }else if (sddf[, 1][i] == &#39;Day30&#39;){
+    sddf[, 1][i] = 30
+  }else if (sddf[, 1][i] == &#39;Day31&#39;){
+    sddf[, 1][i] = 31
+  }else if (sddf[, 1][i] == &#39;Day33&#39;){
+    sddf[, 1][i] = 33
+  }else if (sddf[, 1][i] == &#39;Day36&#39;){
+    sddf[, 1][i] = 36
+  }else if (sddf[, 1][i] == &#39;Day44&#39;){
+    sddf[, 1][i] = 44
+  }
+}
+sddf$Timepoints &lt;- as.numeric(sddf$Timepoints)
+sddf &lt;- sddf[order(sddf$Timepoints)]
+
+# 计算CV，CV保存原始差异系数值，CV_ED存放CV变化的等距斜率，CV_NED存放CV变化的不等距斜率
+x &lt;- meandf[, .(Timepoints)]
+x &lt;- as.numeric(unlist(x))
+num &lt;- 1
+genes &lt;- colnames(meandf)
+CV &lt;- data.table()
+CV_ED &lt;- data.table()
+CV_NED &lt;- data.table()
+for (i in 2:length(genes)){
+  mean &lt;- meandf[[i]]
+  mean &lt;- as.numeric(unlist(mean))
+  sd &lt;- sddf[[i]]
+  sd &lt;- as.numeric(unlist(sd))
+  for (j in 1:(length(mean)-1)){
+    if (mean[j+1] == 0 | mean[j] == 0){
+      tmp1 &lt;- 0
+    }
+    else{
+      tmp1 &lt;- (sd[j+1]/mean[j+1] - sd[j]/mean[j]) / (x[j+1] - x[j])
+    }
+    if (j == 1){
+      slope1 &lt;- tmp1
+    }else{
+      slope1 &lt;- c(slope1, tmp1)
+    }
+    if (mean[j+1] == 0 | mean[j] == 0){
+      tmp2 &lt;- 0
+    }
+    else{
+      tmp2 &lt;- (sd[j+1]/mean[j+1] - sd[j]/mean[j])
+    }
+    if (j == 1){
+      slope2 &lt;- tmp2
+    }else{
+      slope2 &lt;- c(slope2, tmp2)
+    }
+  }
+  CV_NED[, genes[i]:= slope1]
+  CV_ED[, genes[i]:= slope2]
+  
+  for (k in 1:length(mean)){
+    if (mean[k] == 0){
+      tmp3 &lt;- 0
+    }
+    else{
+      tmp3 &lt;- sd[k] / mean[k]
+    }
+    if (k == 1){
+      slope3 &lt;- tmp3
+    }else{
+      slope3 &lt;- c(slope3, tmp3)
+    }
+  }
+  CV[, genes[i]:= slope3]
+  
+  if (num %% 2000 == 0 | num == length(genes)){
+    print(num)
+  }
+  num &lt;- num + 1
+}
+type &lt;- gsub(&#39; &#39;,&#39;_&#39;,type)
+type &lt;- gsub(&#39;/&#39;, &#39;_&#39;, type)
+path1 &lt;- paste0(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getCV/&#39;,&#39;CV_&#39;,type,&#39;_ED.csv&#39;)
+path2 &lt;- paste0(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getCV/&#39;,&#39;CV_&#39;,type,&#39;_NED.csv&#39;)
+path3 &lt;- paste0(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getCV/&#39;,&#39;CV_&#39;,type,&#39;.csv&#39;)
+fwrite(CV_ED, path1)
+fwrite(CV_NED, path2)
+fwrite(CV, path3)
+t4 &lt;- proc.time()
+t &lt;- t4 - t3
+print(paste0(type, &#39; was down! Time taken: &#39;,  t[3][[1]] / 60, &#39; mins&#39;))
+rm(df, meandf, sddf, CV_ED, CV_NED, CV, path1, path2, path3)
+gc()
+# }
+
+
+t5 &lt;- proc.time()
+t &lt;- t5 - t1
+print(paste0(&#39;All time spend: &#39;,  t[3][[1]] / 60, &#39; mins&#39;))</code></pre>
+<p>Finally, considering the heterogeneity of cells, we calculated the
+zero-value ratios, which represented the proportion of cells with a
+detection value of zero for a given gene.</p>
+<pre class="r"><code># 计算零值百分比
+
+library(data.table)
+
+celltypes &lt;- c(&#39;Naïve CD4+ T cells&#39;, &#39;Naïve CD8+ T cells&#39;, &#39;NK/NKT&#39;, &#39;Plasmablasts/Memrary B&#39;, &#39;Naïve B&#39;,
+               &#39;Intermediate B&#39;, &#39;CD14+ Mono&#39;, &#39;CD16+ Mono&#39;, &#39;CD4+ Tcm&#39;, &#39;Plasmacytoid DC&#39;, &#39;Treg&#39;, 
+               &#39;CD8+ Tem&#39;, &#39;Eryth/Platelet&#39;, &#39;MAIT&#39;)
+
+
+# 计算一组值的零值百分比，table函数统计每个值出现的频次
+getZero &lt;- function(x){
+  if (names(table(x))[1] == &#39;0&#39;){
+    nums_zero &lt;- table(x)[[&#39;0&#39;]]
+    nums_all &lt;- length(x)
+    res &lt;- 1 - (nums_zero / nums_all)
+  }else{
+    res &lt;- 0
+  }
+  return(res)
+}
+
+print(&#39;Loading all.csv file.&#39;)
+t1 &lt;- proc.time()
+data &lt;- fread(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/all.csv&#39;)
+t2 &lt;- proc.time()
+t &lt;- t2 - t1
+print(paste0(&#39;Down! Time taken: &#39;, t[3][[1]] / 60, &#39; mins&#39;))
+
+for (type in celltypes){
+  type &lt;- &#39;Eryth/Platelet CD14+ Mono new&#39;
+  print(paste0(&#39;Start processing &#39;, type))
+  t3 &lt;- proc.time()
+
+  # 选取特定类型(type)的细胞，删除不需要的列
+  df &lt;- data[celltype %chin% c(&#39;Eryth/Platelet&#39;,&#39;CD14+ Mono&#39;), 
+            !c(&quot;V1&quot;, &quot;orig.ident&quot;, &quot;nCount_RNA&quot;, &quot;nFeature_RNA&quot;, &quot;percent.mt&quot;, &quot;RNA_snn_res.0.3&quot;, &quot;seurat_clusters&quot;,
+                &quot;Dlabel&quot;, &quot;nCount_ATAC&quot;, &quot;nFeature_ATAC&quot;, &quot;nucleosome_signal&quot;, 
+                &quot;nucleosome_percentile&quot;, &quot;TSS.enrichment&quot;, &quot;TSS.percentile&quot;, &quot;n200&quot;, &quot;n200_k33&quot;, &quot;annotation&quot;, &quot;celltype&quot;)]
+  df1 &lt;- df[Participants %chin% c(&#39;P1&#39;, &#39;P3&#39;, &#39;P4&#39;)]
+
+  # 对于P2，剔除数据质量差的Day1、Day3、Day171、Day185四个时间点的数据
+  df2 &lt;- subset(df, Participants == &#39;P2&#39; &amp; Timepoints %chin% c(&#39;Day0&#39;, &#39;Day6&#39;,&#39;Day14&#39;,&#39;Day30&#39;,&#39;Day31&#39;,&#39;Day33&#39;,&#39;Day36&#39;,&#39;Day44&#39;))
+  df &lt;- rbind(df1, df2)
+  df &lt;- df[, !c(&#39;Participants&#39;)]
+
+  # 求该细胞类型所有基因不同时间点的零值百分比
+  zerodf &lt;- df[, lapply(.SD, getZero), by = Timepoints]
+
+  # 按时间点升序排列 
+  for (i in 1:nrow(zerodf)){
+    if (zerodf[, 1][i] == &#39;Day0&#39;){
+      zerodf[, 1][i] = 0
+    }else if (zerodf[, 1][i] == &#39;Day1&#39;){
+      zerodf[, 1][i] = 1
+    }else if (zerodf[, 1][i] == &#39;Day3&#39;){
+      zerodf[, 1][i] = 3
+    }else if (zerodf[, 1][i] == &#39;Day6&#39;){
+      zerodf[, 1][i] = 6
+    }else if (zerodf[, 1][i] == &#39;Day14&#39;){
+      zerodf[, 1][i] = 14
+    }else if (zerodf[, 1][i] == &#39;Day30&#39;){
+      zerodf[, 1][i] = 30
+    }else if (zerodf[, 1][i] == &#39;Day31&#39;){
+      zerodf[, 1][i] = 31
+    }else if (zerodf[, 1][i] == &#39;Day33&#39;){
+      zerodf[, 1][i] = 33
+    }else if (zerodf[, 1][i] == &#39;Day36&#39;){
+      zerodf[, 1][i] = 36
+    }else if (zerodf[, 1][i] == &#39;Day44&#39;){
+      zerodf[, 1][i] = 44
+    }
+  }
+  zerodf$Timepoints &lt;- as.numeric(zerodf$Timepoints)
+  zerodf &lt;- zerodf[order(zerodf$Timepoints)]
+
+  # 计算零值百分比，
+  # zeroPT保存原始零值百分比值，zeroPT_ED存放零值百分比变化的等距斜率，zeroPT_NED存放零值百分比变化的不等距斜率  
+  x &lt;- zerodf[, .(Timepoints)]
+  x &lt;- as.numeric(unlist(x))
+  num &lt;- 1
+  genes &lt;- colnames(zerodf)
+  zeroPT &lt;- data.table()
+  zeroPT_ED &lt;- data.table()
+  zeroPT_NED &lt;- data.table()
+
+  for (i in 2:length(genes)){
+    zero &lt;- zerodf[[i]]
+    zero &lt;- as.numeric(unlist(zero))
+    zeroPT[, genes[i]:= zero]
+
+    for (j in 1:(length(zero)-1)){
+
+      tmp1 &lt;- (zero[j+1] - zero[j]) / (x[j+1] - x[j])
+      if (j == 1){
+        zero1 &lt;- tmp1
+      }else{
+        zero1 &lt;- c(zero1, tmp1)
+      }
+
+      tmp2 &lt;- (zero[j+1] - zero[j])
+      if (j == 1){
+        zero2 &lt;- tmp2
+      }else{
+        zero2 &lt;- c(zero2, tmp2)
+      }
+    }
+    zeroPT_NED[, genes[i]:= zero1]
+    zeroPT_ED[, genes[i]:= zero2]
+
+    if (num %% 2000 == 0 | num == length(genes)){
+      print(num)
+    }
+    num &lt;- num + 1
+  }
+  type &lt;- gsub(&#39; &#39;,&#39;_&#39;,type)
+  type &lt;- gsub(&#39;/&#39;, &#39;_&#39;, type)
+  path1 &lt;- paste0(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getZero/&#39;,&#39;ZeroPT_&#39;,type,&#39;_ED.csv&#39;)
+  path2 &lt;- paste0(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getZero/&#39;,&#39;ZeroPT_&#39;,type,&#39;_NED.csv&#39;)
+  path3 &lt;- paste0(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getZero/&#39;,&#39;ZeroPT_&#39;,type,&#39;.csv&#39;)
+  fwrite(zeroPT_ED, path1)
+  fwrite(zeroPT_NED, path2)
+  fwrite(zeroPT, path3)
+  t4 &lt;- proc.time()
+  t &lt;- t4 - t3
+  print(paste0(type, &#39; was down! Time taken: &#39;,  t[3][[1]] / 60, &#39; mins&#39;))
+  rm(df, zerodf, zeroPT_ED, zeroPT_NED, zeroPT, path1, path2, path3)
+  # rm(df, zerodf, zeroPT, path3)
+  gc()
+}
+  
+t5 &lt;- proc.time()
+t &lt;- t5 - t1
+print(paste0(&#39;All time spend: &#39;,  t[3][[1]] / 60, &#39; mins&#39;))</code></pre>
+<p>In the final step, we first excluded genes whose expression level is
+0 and were expressed at only 1 time point, and then we performed
+clustering layer-by-layer.</p>
+<pre class="python"><code>import os
+import gc
+import time
+import numpy as np
+import pandas as pd
+import matplotlib
+matplotlib.use(&#39;Agg&#39;)
+import matplotlib.pyplot as plt
+import warnings
+from sklearn import metrics
+from sklearn.cluster import MeanShift
+from sklearn.decomposition import PCA
+from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import Normalizer
+from kneed import KneeLocator
+
+warnings.filterwarnings(&#39;ignore&#39;)
+annotations = [&#39;Eryth/Platelet CD14+ Mono new&#39;]
+# annotations = [&#39;Naïve CD4+ T cells&#39;, &#39;Naïve CD8+ T cells&#39;, &#39;NK/NKT&#39;, &#39;Plasmablasts/Memrary B&#39;, &#39;Naïve B&#39;,
+#                &#39;Intermediate B&#39;, &#39;CD14+ Mono&#39;, &#39;CD16+ Mono&#39;, &#39;CD4+ Tcm&#39;, &#39;Plasmacytoid DC&#39;, &#39;Treg&#39;, 
+#                 &#39;CD8+ Tem&#39;, &#39;MAIT&#39;]
+ 
+for celltype in annotations:
+    startTime = time.time()
+    print(&#39;Start processing {}.&#39;.format(celltype))
+    
+    celltype = celltype.replace(&#39; &#39;, &#39;_&#39;)
+    celltype = celltype.replace(&#39;/&#39;, &#39;_&#39;)
+    # os.makedirs(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/&#39;.format(celltype))
+
+    slope = pd.read_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getSlope/Slope_{}_ED.csv&#39;.format(celltype))
+    zero = pd.read_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getZero/ZeroPT_{}_ED.csv&#39;.format(celltype))
+    zero = zero.fillna(0)
+    zero_newcol = {}
+    for i in range(len(zero.columns)):
+        y = zero.iloc[:, i]
+        newcol = zero.columns[i] + &#39;_flip&#39;
+        zero_newcol[newcol] = y
+    zero_newcol_df = pd.DataFrame(zero_newcol)
+    zero = pd.concat([zero, zero_newcol_df], axis=1)
+    # cv = pd.read_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getCV/all_{}_NED.csv&#39;.format(celltype))
+    # cv = cv.fillna(0)
+    # cv_newcol = {}
+    # for i in range(len(cv.columns)):
+    #     y = cv.iloc[:, i]
+    #     y = -y
+    #     newcol = cv.columns[i] + &#39;_flip&#39;
+    #     cv_newcol[newcol] = y
+    # cv_newcol_df = pd.DataFrame(cv_newcol)
+    # cv = pd.concat([cv, cv_newcol_df], axis=1)
+        
+    gex1 = pd.read_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/byPeople/P1_{}.csv&#39;.format(celltype))
+    gex1 = gex1.fillna(0)
+    gex1_newcol = {}
+    for i in range(1,len(gex1.columns)):
+        y = gex1.iloc[:,i]
+        ymax = max(y)
+        ymin = min(y)
+        yflip = (ymax + ymin) - y
+        newcol = gex1.columns[i] + &#39;_flip&#39;
+        gex1_newcol[newcol] = yflip
+    gex1_newcol_df = pd.DataFrame(gex1_newcol)
+    gex1 = pd.concat([gex1, gex1_newcol_df], axis=1)
+    
+    gex2 = pd.read_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/byPeople/P2_{}.csv&#39;.format(celltype))
+    gex2 = gex2.fillna(0)
+    gex2_newcol = {}
+    for i in range(1,len(gex2.columns)):
+        y = gex2.iloc[:,i]
+        ymax = max(y)
+        ymin = min(y)
+        yflip = (ymax + ymin) - y
+        newcol = gex2.columns[i] + &#39;_flip&#39;
+        gex2_newcol[newcol] = yflip
+    gex2_newcol_df = pd.DataFrame(gex2_newcol)
+    gex2 = pd.concat([gex2, gex2_newcol_df], axis=1)
+    
+    gex3 = pd.read_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/byPeople/P3_{}.csv&#39;.format(celltype))
+    gex3 = gex3.fillna(0)
+    gex3_newcol = {}
+    for i in range(1,len(gex3.columns)):
+        y = gex3.iloc[:,i]
+        ymax = max(y)
+        ymin = min(y)
+        yflip = (ymax + ymin) - y
+        newcol = gex3.columns[i] + &#39;_flip&#39;
+        gex3_newcol[newcol] = yflip
+    gex3_newcol_df = pd.DataFrame(gex3_newcol)
+    gex3 = pd.concat([gex3, gex3_newcol_df], axis=1)
+    
+    gex4 = pd.read_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/byPeople/P4_{}.csv&#39;.format(celltype))
+    gex4 = gex4.fillna(0)
+    gex4_newcol = {}
+    for i in range(1,len(gex4.columns)):
+        y = gex4.iloc[:,i]
+        ymax = max(y)
+        ymin = min(y)
+        yflip = (ymax + ymin) - y
+        newcol = gex4.columns[i] + &#39;_flip&#39;
+        gex4_newcol[newcol] = yflip
+    gex4_newcol_df = pd.DataFrame(gex4_newcol)
+    gex4 = pd.concat([gex4, gex4_newcol_df], axis=1)
+
+    geneNames = gex1.columns[1:]
+    delete_list = []
+    for i in geneNames:
+        if sum(gex1[i]) == 0 or sum(gex2[i]) == 0 or sum(gex3[i]) == 0 or sum(gex4[i]) == 0:
+            delete_list.append(i)
+    gex1 = gex1.drop(delete_list, axis=1)    
+    gex2 = gex2.drop(delete_list, axis=1) 
+    gex3 = gex3.drop(delete_list, axis=1) 
+    gex4 = gex4.drop(delete_list, axis=1) 
+    slope = slope.drop(delete_list, axis=1) 
+    zero = zero.drop(delete_list, axis=1)   
+
+    merge = pd.concat([slope, zero], axis=0)
+    merge = pd.DataFrame(merge.values.T, index=merge.columns)
+
+    num_genes = len(gex1.columns) - 1  
+    num_timepoints = len(gex1)
+    alldim = len(merge.columns)
+    dim_slope_origin = int((len(slope) + 1) / 2)
+    dim_slope_gap = len(slope) - dim_slope_origin
+    dim_zero = len(zero)
+    
+    print(&#39;=&#39;*25 + &#39;The summary of the data being processed.&#39; + &#39;=&#39;*25)
+    print(&#39;num_genes: &#39;, num_genes)
+    print(&#39;num_timepoints: &#39;, num_timepoints)
+    print(&#39;dim_slope_origin: &#39;, dim_slope_origin)
+    print(&#39;dim_slope_gap: &#39;, dim_slope_gap)
+    print(&#39;dim_zero: &#39;, dim_zero)
+    print(&#39;alldim: &#39;, alldim)
+    print(&#39;=&#39;*88)
+
+    del slope,zero
+    gc.collect()
+
+    slope_origin = merge.iloc[:, 0:dim_slope_origin]
+    slope_origin = slope_origin.copy(deep=True)
+    for i in range(len(slope_origin)):
+        for j in range(len(slope_origin.columns)):
+            if slope_origin.iloc[i,j] &gt; 0:
+                slope_origin.iloc[i,j] = 2
+            elif slope_origin.iloc[i,j] &lt; 0:
+                slope_origin.iloc[i,j] = -2
+
+    slope_origin[&#39;sum&#39;] = slope_origin.apply(lambda x: abs(x).sum(), axis=1)
+    merge[&#39;pre_cluster&#39;] = &#39;&#39;
+    pre_cluster_idx = len(merge.columns) - 1
+    #print(&#39;pre_cluster_idx: &#39;, pre_cluster_idx)
+    sum_idx = len(slope_origin.columns) - 1
+    #print(&#39;sum_idx: &#39;, sum_idx)
+    for i in range(len(merge)):
+        if slope_origin.iloc[i,sum_idx] == 2 or slope_origin.iloc[i,sum_idx] == 0:
+            merge.iloc[i,pre_cluster_idx] = 0
+        else:
+            merge.iloc[i,pre_cluster_idx] = 1
+    # pre_counts = pd.value_counts(merge[&#39;pre_cluster&#39;])
+    # x = pre_counts.index
+    # y = pre_counts
+    # plt.figure(figsize=(20,10))
+    # plt.title(&#39;{}: The numbers of zero and nonzero.&#39;.format(celltype), fontsize=15)
+    # plt.bar(x, y)
+    # for a,b,i in zip(x,y,range(len(x))):
+    #     plt.text(a, b+0.1, &quot;%.0f&quot;%y[len(x)-1-i], ha=&#39;center&#39;, fontsize=15)
+    # plt.savefig(&#39;/home/special/user/huhuajie/clusters_final/cluster/{}/RemoveZero.png&#39;.format(celltype))
+    # plt.close()
+
+    print(&#39;=&#39;*25 + &#39;Start first-layer clustering.&#39; + &#39;=&#39;*25)
+    os.makedirs(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/&#39;.format(celltype))
+    df1 = pd.DataFrame(columns = range(0,dim_slope_origin))
+    for i in range(len(merge)):
+        if merge.iloc[i, pre_cluster_idx] == 1:
+            df1 = df1.append(slope_origin.iloc[i,:sum_idx])
+
+    X = df1
+    ms = MeanShift(bandwidth=2, n_jobs = -1).fit(X)
+    labels = ms.labels_
+    n_clusters = len(set(labels))
+    num_layer1 = n_clusters
+    print(&quot;Estimated number of clusters: %d&quot; % n_clusters)
+
+    df1[&#39;cluster&#39;] = labels
+
+    cents = []
+    for i in range(n_clusters):
+        sum = 0
+        cluster_temp = df1.loc[df1[&#39;cluster&#39;] == i]
+        length = len(cluster_temp.columns) - 1
+        for j in range(len(cluster_temp)):
+            temp = cluster_temp.iloc[j,0:length]
+            sum += temp
+
+        cents.append(sum/len(cluster_temp))
+
+    Separation = []
+    Cohesion = []
+    for i in range(n_clusters):
+        inter_sum = 0
+        intra_sum = 0
+        for j in range(n_clusters):
+            inter_temp = np.sqrt(np.sum((cents[j] - cents[i])**2))
+            inter_sum += inter_temp
+
+        if len(cents) == 1:
+            Separation.append(0)
+        else:
+            Separation.append(inter_sum/(len(cents)-1))
+
+        cluster_temp = df1.loc[df1[&#39;cluster&#39;] == i]
+        length = len(cluster_temp.columns) - 1
+        for k in range(len(cluster_temp)):
+            intra_temp = np.sqrt(np.sum((cluster_temp.iloc[k,0:length] - cents[i])**2))
+            intra_sum += intra_temp
+
+        Cohesion.append(intra_sum/len(cluster_temp))
+
+    merge[&#39;layer1 clustering results&#39;] = &#39;&#39;
+    for i in range(len(df1)):
+        merge.loc[df1.index[i],&#39;layer1 clustering results&#39;] = labels[i]
+
+    plt.figure(figsize=(20,10))
+    counts2 = pd.value_counts(labels)
+    x = counts2.index
+    y = counts2
+    plt.title(&#39;{}: The number of clusters is {}.&#39;.format(celltype, n_clusters), fontsize=15)
+    plt.bar(x, y)
+    plt.savefig(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/layer1_NumofClusters.png&#39;.format(celltype))
+    plt.close()
+
+    results_clusters = pd.DataFrame(counts2)
+    results_clusters.columns=[&#39;numbers&#39;]
+    results_clusters[&#39;Cohesion&#39;] = &#39;&#39;
+    results_clusters[&#39;Separation&#39;] = &#39;&#39;
+    for i in range(len(Separation)):
+        results_clusters.loc[i,&#39;Cohesion&#39;] = Cohesion[i]
+        results_clusters.loc[i,&#39;Separation&#39;] = Separation[i]
+    results_clusters.to_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/layer1_results_of_Clustering.csv&#39;.format(celltype))
+    print(&#39;=&#39;*24 + &#39;First-layer clustering was Down.&#39; + &#39;=&#39;*24)
+
+    print(&#39;=&#39;*25 + &#39;Start second-layer clustering.&#39; + &#39;=&#39;*25)
+    merge[&#39;layer2 clustering results&#39;] = &#39;&#39;
+    num_layer2 = []
+    for i in range(num_layer1):
+        os.makedirs(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/{}/&#39;.format(celltype, i))
+        df2 = merge.loc[merge[&#39;layer1 clustering results&#39;] == i]
+        df2 = df2.iloc[:,dim_slope_origin:(dim_slope_origin + dim_slope_gap)]
+        df2 = df2.copy(deep=True)
+        for j in range(len(df2)):
+            for k in range(len(df2.columns)):
+                if df2.iloc[j,k] &gt; 0:
+                    df2.iloc[j,k] = 2
+                elif df2.iloc[j,k] &lt; 0:
+                    df2.iloc[j,k] = -2
+
+        X = df2
+        if len(df2) &lt;= 3:
+            labels = [0 for a in range(len(df2))]
+        else:
+            ms = MeanShift(bandwidth=2, n_jobs=-1).fit(X)
+            labels = ms.labels_
+
+        n_clusters = len(set(labels))
+        num_layer2.append(n_clusters)
+        # print(&quot;Estimated number of clusters: %d&quot; % n_clusters)
+
+        df2[&#39;cluster&#39;] = labels
+
+        cents = []
+        for g in range(n_clusters):
+            sum = 0
+            cluster_temp = df2.loc[df2[&#39;cluster&#39;] == g]
+            length = len(cluster_temp.columns) - 1
+            for h in range(len(cluster_temp)):
+                temp = cluster_temp.iloc[h,0:length]
+                sum += temp
+
+            cents.append(sum/len(cluster_temp))
+
+        Separation = []
+        Cohesion = []
+        for l in range(len(cents)):
+            inter_sum = 0
+            intra_sum = 0
+            for m in range(len(cents)):
+                inter_temp = np.sqrt(np.sum((cents[m] - cents[l])**2))
+                inter_sum += inter_temp
+
+            if len(cents) == 1:
+                Separation.append(0)
+            else:
+                Separation.append(inter_sum/(len(cents)-1))
+
+            cluster_temp = df2.loc[df2[&#39;cluster&#39;] == l]
+            length = len(cluster_temp.columns) - 1
+            for n in range(len(cluster_temp)):
+                intra_temp = np.sqrt(np.sum((cluster_temp.iloc[n,0:length] - cents[l])**2))
+                intra_sum += intra_temp
+
+            Cohesion.append(intra_sum/len(cluster_temp))
+
+        for j in range(len(df2.index)):
+            merge.loc[df2.index[j],&#39;layer2 clustering results&#39;] = labels[j]
+
+        plt.figure(figsize=(20,10))
+        counts2 = pd.value_counts(labels)
+        x = counts2.index
+        y = counts2
+        plt.title(&#39;{}: The number of clusters is {}.&#39;.format(celltype, n_clusters), fontsize=15)
+        plt.bar(x, y)
+        plt.savefig(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/{}/layer2_NumofClusters.png&#39;.format(celltype, i))
+        plt.close()
+
+        results_clusters = pd.DataFrame(counts2)
+        results_clusters.columns=[&#39;numbers&#39;]
+        results_clusters[&#39;Cohesion&#39;] = &#39;&#39;
+        results_clusters[&#39;Separation&#39;] = &#39;&#39;
+        for k in range(len(Separation)):
+            results_clusters.loc[k,&#39;Cohesion&#39;] = Cohesion[k]
+            results_clusters.loc[k,&#39;Separation&#39;] = Separation[k]
+        results_clusters.to_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/{}/layer2_Results_of_Clustering.csv&#39;.format(celltype, i))
+
+        # print(&#39;Layer2: No.&#39; + str(i) + &#39; was down!&#39;)
+    print(&#39;=&#39;*24 + &#39;Second-layer clustering was down.&#39; + &#39;=&#39;*24)
+
+    print(&#39;=&#39;*25 + &#39;Start third-layer clustering.&#39; + &#39;=&#39;*25)
+    merge[&#39;layer3 clustering results&#39;] = &#39;&#39;
+    num_layer3 = []
+    for i in range(num_layer1):
+        num_layer3_temp = []
+        for j in range(num_layer2[i]):
+            df3 = merge.loc[(merge[&#39;layer1 clustering results&#39;] == i) &amp; (merge[&#39;layer2 clustering results&#39;] == j)]
+            os.makedirs(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/{}/{}/&#39;.format(celltype, i, j))
+            df3 = df3.iloc[:,dim_slope_gap:(dim_slope_origin + dim_slope_gap)]
+            df3 = df3.copy(deep=True)
+
+            X = Normalizer().fit_transform(df3)
+
+            if len(df3) &gt; 3:
+                nn = NearestNeighbors(n_neighbors=2, n_jobs=-1).fit(X)
+                distances, idx = nn.kneighbors(X)
+                distances = np.sort(distances, axis=0)
+                distances = distances[:,1]
+                x = np.arange(len(distances))
+                y = distances
+                kneedle = KneeLocator(x, y, S=1.0, curve=&quot;convex&quot;, direction=&quot;increasing&quot;)
+                # print(&#39;The elbow is: &#39;, kneedle.elbow_y)
+
+            if (len(df3) &lt;= 3) or (kneedle.elbow_y == 0) or (kneedle.elbow_y == &#39;None&#39;) or (kneedle.elbow_y == None):
+                labels = [0 for k in range(len(df3))]
+            else:
+                bandwidth = kneedle.elbow_y
+                ms = MeanShift(bandwidth=bandwidth, n_jobs=-1).fit(X)
+                labels = ms.labels_
+
+            n_clusters = len(set(labels))
+            num_layer3_temp.append(n_clusters)
+            # print(&quot;Estimated number of clusters: %d&quot; % n_clusters)
+
+            df3[&#39;cluster&#39;] = labels
+
+            cents = []
+            for g in range(n_clusters):
+                sum = 0
+                cluster_temp = df3.loc[df3[&#39;cluster&#39;] == g]
+                length = len(cluster_temp.columns) - 1
+                for h in range(len(cluster_temp)):
+                    temp = cluster_temp.iloc[h,0:length]
+                    sum += temp
+
+                cents.append(sum/len(cluster_temp))
+
+            Separation = []
+            Cohesion = []
+            for l in range(len(cents)):
+                inter_sum = 0
+                intra_sum = 0
+                for m in range(len(cents)):
+                    inter_temp = np.sqrt(np.sum((cents[m] - cents[l])**2))
+                    inter_sum += inter_temp
+
+                if len(cents) == 1:
+                    Separation.append(0)
+                else:
+                    Separation.append(inter_sum/(len(cents)-1))
+
+                cluster_temp = df3.loc[df3[&#39;cluster&#39;] == l]
+                length = len(cluster_temp.columns) - 1
+                for n in range(len(cluster_temp)):
+                    intra_temp = np.sqrt(np.sum((cluster_temp.iloc[n,0:length] - cents[l])**2))
+                    intra_sum += intra_temp
+
+                Cohesion.append(intra_sum/len(cluster_temp))
+
+            for a in range(len(df3.index)):
+                merge.loc[df3.index[a],&#39;layer3 clustering results&#39;] = labels[a]
+
+            plt.figure(figsize=(20,10))
+            counts3 = pd.value_counts(labels)
+            x = counts3.index
+            y = counts3
+            plt.title(&#39;{}: The number of clusters is {}.&#39;.format(celltype, n_clusters), fontsize=15)
+            plt.bar(x, y)
+            plt.savefig(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/{}/{}/layer3_NumofClusters.png&#39;.format(celltype, i, j))
+            plt.close()
+
+            results_clusters = pd.DataFrame(counts3)
+            results_clusters.columns=[&#39;numbers&#39;]
+            results_clusters[&#39;Cohesion&#39;] = &#39;&#39;
+            results_clusters[&#39;Separation&#39;] = &#39;&#39;
+            for k in range(len(Separation)):
+                results_clusters.loc[k,&#39;Cohesion&#39;] = Cohesion[k]
+                results_clusters.loc[k,&#39;Separation&#39;] = Separation[k]
+            results_clusters.to_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/{}/{}/layer3_Results_of_Clustering.csv&#39;.format(celltype, i, j))
+            # print(&#39;Layer3: No.&#39; + str(j) + &#39; in cluster &#39; + str(i) + &#39;(Layer2) was down!&#39;)
+
+        num_layer3.append(num_layer3_temp)
+    print(&#39;=&#39;*25 + &#39;Third-layer clustering was down.&#39; + &#39;=&#39;*25)
+
+    merge[&#39;layer4 clustering results&#39;] = &#39;&#39;
+    merge[&#39;The_cohesion_of_the_last_layer&#39;] = &#39;&#39;
+    merge[&#39;The_separation_of_the_last_layer&#39;] = &#39;&#39;
+    num_layer4 = []
+    for i in range(num_layer1):
+        for j in range(num_layer2[i]):
+            for k in range(num_layer3[i][j]):
+                df4 = merge.loc[(merge[&#39;layer1 clustering results&#39;] == i) &amp; (merge[&#39;layer2 clustering results&#39;] == j) &amp; (merge[&#39;layer3 clustering results&#39;] == k)]
+                os.makedirs(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/{}/{}/{}/&#39;.format(celltype, i, j, k))
+                df4 = df4.iloc[:,(dim_slope_origin + dim_slope_gap):(dim_slope_origin + dim_slope_gap + dim_zero)]
+                df4 = df4.copy(deep=True)
+
+                X = Normalizer().fit_transform(df4)
+
+                if len(df4) &gt; 3:
+                    nn = NearestNeighbors(n_neighbors=2, n_jobs=-1).fit(X)
+                    distances, idx = nn.kneighbors(X)
+                    distances = np.sort(distances, axis=0)
+                    distances = distances[:,1]
+                    x = np.arange(len(distances))
+                    y = distances
+                    kneedle = KneeLocator(x, y, S=1.0, curve=&quot;convex&quot;, direction=&quot;increasing&quot;)
+                    # print(&#39;The elbow is: &#39;, kneedle.elbow_y)
+
+                if (len(df4) &lt;= 3) or (kneedle.elbow_y == 0) or (kneedle.elbow_y == &#39;None&#39;) or (kneedle.elbow_y == None):
+                    labels = [0 for b in range(len(df4))]
+                else:
+                    bandwidth = kneedle.elbow_y
+                    ms = MeanShift(bandwidth=bandwidth, n_jobs = -1).fit(X)
+                    labels = ms.labels_
+
+                n_clusters = len(set(labels))
+                num_layer3_temp.append(n_clusters)
+                # print(&quot;Estimated number of clusters: %d&quot; % n_clusters)
+
+                df4[&#39;cluster&#39;] = labels
+
+                cents = []
+                for g in range(n_clusters):
+                    sum = 0
+                    cluster_temp = df4.loc[df4[&#39;cluster&#39;] == g]
+                    length = len(cluster_temp.columns) - 1
+                    for h in range(len(cluster_temp)):
+                        temp = cluster_temp.iloc[h,0:length]
+                        sum += temp
+
+                    cents.append(sum/len(cluster_temp))
+
+                Separation = []
+                Cohesion = []
+                for l in range(len(cents)):
+                    inter_sum = 0
+                    intra_sum = 0
+                    for m in range(len(cents)):
+                        inter_temp = np.sqrt(np.sum((cents[m] - cents[l])**2))
+                        inter_sum += inter_temp
+
+                    if len(cents) == 1:
+                        Separation.append(0)
+                    else:
+                        Separation.append(inter_sum/(len(cents)-1))
+
+                    cluster_temp = df4.loc[df4[&#39;cluster&#39;] == l]
+                    length = len(cluster_temp.columns) - 1
+                    for n in range(len(cluster_temp)):
+                        intra_temp = np.sqrt(np.sum((cluster_temp.iloc[n,0:length] - cents[l])**2))
+                        intra_sum += intra_temp
+
+                    Cohesion.append(intra_sum/len(cluster_temp))
+
+                for a in range(len(df4.index)):
+                    merge.loc[df4.index[a],&#39;layer4 clustering results&#39;] = labels[a]
+                    merge.loc[df4.index[a],&#39;The_cohesion_of_the_last_layer&#39;] = Cohesion[labels[a]]
+                    merge.loc[df4.index[a],&#39;The_separation_of_the_last_layer&#39;] = Separation[labels[a]]
+
+                plt.figure(figsize=(20,10))
+                counts4 = pd.value_counts(labels)
+                x = counts4.index
+                y = counts4
+                plt.title(&#39;{}: The number of clusters is {}.&#39;.format(celltype, n_clusters), fontsize=15)
+                plt.bar(x, y)
+                plt.savefig(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/{}/{}/{}/layer4_NumofClusters.png&#39;.format(celltype, i, j, k))
+                plt.close()
+
+                results_clusters = pd.DataFrame(counts4)
+                results_clusters.columns=[&#39;numbers&#39;]
+                results_clusters[&#39;Cohesion&#39;] = &#39;&#39;
+                results_clusters[&#39;Separation&#39;] = &#39;&#39;
+                for b in range(len(Separation)):
+                    results_clusters.loc[b,&#39;Cohesion&#39;] = Cohesion[b]
+                    results_clusters.loc[b,&#39;Separation&#39;] = Separation[b]
+                results_clusters.to_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/1/{}/{}/{}/layer4_Results_of_Clustering.csv&#39;.format(celltype, i, j, k))
+
+                # print(&#39;Layer4: No.&#39; + str(k) + &#39; in cluster &#39; + str(j) + &#39;(Layer3) was down!&#39;)
+
+    x = np.arange(num_timepoints)
+    for i in range(1, num_genes + 1):
+        geneName = merge.index[i-1]
+
+        y1 = gex1[geneName]
+        y2 = gex2[geneName]
+        y3 = gex3[geneName]
+        y4 = gex4[geneName]
+        y_upper, y_lower, y = [], [], []
+        plt.figure(figsize = (6, 3))
+        plt.xlim((-0.5,9.5))
+        plt.xticks(x)
+        for k in range(len(y1)):
+          y_tmp = (y1[k] + y2[k] + y3[k] + y4[k]) / 4
+          ymax = (max(y1[k], y2[k], y3[k], y4[k]))
+          ymin = (min(y1[k], y2[k], y3[k], y4[k]))
+          y_upper.append(ymax - y_tmp)
+          y_lower.append(y_tmp - ymin)
+          y.append(y_tmp)
+        plt.errorbar(x, y, yerr = [y_lower, y_upper], fmt=&#39;o-&#39;, ecolor=&#39;r&#39;, color=&#39;b&#39;, elinewidth=1, capsize=4)
+        path = &#39;/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/&#39;.format(celltype)
+        for j in [alldim, alldim + 1, alldim + 2, alldim + 3, alldim + 4]:
+            if merge.iloc[i-1,j] != None:
+                path = path + str(merge.iloc[i-1,j]) + &#39;/&#39;
+        if not os.path.exists(path):
+            os.makedirs(path)
+        if geneName == &#39;THRA1/BTR&#39;:
+          geneName = &#39;THRA1_BTR&#39;
+        if geneName == &#39;THRA1/BTR_flip&#39;:
+          geneName = &#39;THRA1_BTR_flip&#39;
+        plt.savefig(&#39;{}{}.png&#39;.format(path, geneName))
+        plt.close()
+        if i % 1000 == 0 or i == num_genes:
+            print(str(i) + &#39;/&#39; + str(num_genes) + &#39; was down.&#39;)
+
+    merge.to_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/cluster/{}/Results_{}.csv&#39;.format(celltype,celltype))
+
+    overTime = time.time()
+    spendtime = (overTime - startTime) / 60
+    print(&#39;{} was Down! Time taken: {} mins&#39;.format(celltype, spendtime))</code></pre>
+<p>Finally, a line graph of co-expressed genes can be drawn</p>
+<pre class="python"><code>import matplotlib
+matplotlib.use(&#39;Agg&#39;)
+import matplotlib.pyplot as plt
+from matplotlib import colors
+import pandas as pd
+import numpy as np
+import time
+import os
+
+changecolor = colors.Normalize(vmin=0, vmax=1.0)
+
+annotations = [&#39;Naïve CD4+ T cells&#39;, &#39;Naïve CD8+ T cells&#39;, &#39;NK/NKT&#39;, &#39;Plasmablasts/Memrary B&#39;, &#39;Naïve B&#39;,
+               &#39;Intermediate B&#39;, &#39;CD14+ Mono&#39;, &#39;CD16+ Mono&#39;, &#39;CD4+ Tcm&#39;, &#39;Plasmacytoid DC&#39;, &#39;Treg&#39;, 
+                &#39;CD8+ Tem&#39;, &#39;MAIT&#39;]
+# annotations = [&#39;Eryth/Platelet CD14+ Mono new&#39;]
+
+for celltype in annotations:
+    startTime = time.time()
+    print(&#39;Start processing {}.&#39;.format(celltype))
+    celltype = celltype.replace(&#39; &#39;, &#39;_&#39;)
+    celltype = celltype.replace(&#39;/&#39;, &#39;_&#39;)
+
+    gex1 = pd.read_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/byPeople/P1_{}.csv&#39;.format(celltype))
+    gex1 = gex1.fillna(0)
+    gex1_newcol = {}
+    for i in range(1,len(gex1.columns)):
+        y = gex1.iloc[:,i]
+        ymax = max(y)
+        ymin = min(y)
+        yflip = (ymax + ymin) - y
+        newcol = gex1.columns[i] + &#39;_flip&#39;
+        gex1_newcol[newcol] = yflip
+    gex1_newcol_df = pd.DataFrame(gex1_newcol)
+    gex1 = pd.concat([gex1, gex1_newcol_df], axis=1)
+
+    gex2 = pd.read_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/byPeople/P2_{}.csv&#39;.format(celltype))
+    gex2 = gex2.fillna(0)
+    gex2_newcol = {}
+    for i in range(1,len(gex2.columns)):
+        y = gex2.iloc[:,i]
+        ymax = max(y)
+        ymin = min(y)
+        yflip = (ymax + ymin) - y
+        newcol = gex2.columns[i] + &#39;_flip&#39;
+        gex2_newcol[newcol] = yflip
+    gex2_newcol_df = pd.DataFrame(gex2_newcol)
+    gex2 = pd.concat([gex2, gex2_newcol_df], axis=1)
+
+    gex3 = pd.read_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/byPeople/P3_{}.csv&#39;.format(celltype))
+    gex3 = gex3.fillna(0)
+    gex3_newcol = {}
+    for i in range(1,len(gex3.columns)):
+        y = gex3.iloc[:,i]
+        ymax = max(y)
+        ymin = min(y)
+        yflip = (ymax + ymin) - y
+        newcol = gex3.columns[i] + &#39;_flip&#39;
+        gex3_newcol[newcol] = yflip
+    gex3_newcol_df = pd.DataFrame(gex3_newcol)
+    gex3 = pd.concat([gex3, gex3_newcol_df], axis=1)
+
+    gex4 = pd.read_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getGEX/byPeople/P4_{}.csv&#39;.format(celltype))
+    gex4 = gex4.fillna(0)
+    gex4_newcol = {}
+    for i in range(1,len(gex4.columns)):
+        y = gex4.iloc[:,i]
+        ymax = max(y)
+        ymin = min(y)
+        yflip = (ymax + ymin) - y
+        newcol = gex4.columns[i] + &#39;_flip&#39;
+        gex4_newcol[newcol] = yflip
+    gex4_newcol_df = pd.DataFrame(gex4_newcol)
+    gex4 = pd.concat([gex4, gex4_newcol_df], axis=1)
+
+    ref = pd.read_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/filtered/filtered_{}.csv&#39;.format(celltype))
+    ref = ref.iloc[:,1:]
+    results = ref[&#39;clustering results&#39;]
+    geneNames = ref[&#39;gene&#39;]
+
+    size = pd.read_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getZero/ZeroPT_{}.csv&#39;.format(celltype))
+    size = size.fillna(0)
+    size_newcol ={}
+    for i in range(0,len(size.columns)):
+        zero_flip = size.iloc[:,i]
+        newcol = size.columns[i] + &#39;_flip&#39;
+        size_newcol[newcol] = zero_flip
+    size_newcol_df = pd.DataFrame(size_newcol)
+    size = pd.concat([size, size_newcol_df], axis=1)
+
+    cv = pd.read_csv(&#39;/database/huhuajie/findCoexpressionGenes/finalResults/getCV/CV_{}.csv&#39;.format(celltype))
+    cv = cv.fillna(0)
+    cv_newcol = {}
+    for i in range(0,len(cv.columns)):
+        cv_flip = cv.iloc[:,i]
+        newcol = cv.columns[i] + &#39;_flip&#39;
+        cv_newcol[newcol] = cv_flip
+    cv_newcol_df = pd.DataFrame(cv_newcol)
+    cv = pd.concat([cv, cv_newcol_df], axis=1)
+
+    x = [num for num in range(len(gex1))]
+    x_label = [0, 1, 3, 6, 14, 30, 31, 33, 36, 44]
+
+    print(&#39;num of genes:{}&#39;.format(len(geneNames)))
+    for i in range(len(geneNames)):
+        if i % 50 == 0 or i == len(geneNames) - 1:
+            print(i)
+        geneName = geneNames[i]
+        path = &#39;/database/huhuajie/findCoexpressionGenes/finalResults/draw/{}/{}/&#39;.format(celltype, results[i])
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        data1 = gex1[geneName]
+        data2 = gex2[geneName].iloc[0:10]
+        data3 = gex3[geneName]
+        data4 = gex4[geneName]
+        y_mean, y = [], []
+        for j in range(len(data1)):
+            y_mean.append((data1[j] + data2[j] + data3[j] + data4[j]) / 4)
+            y.append([data1[j], data2[j], data3[j], data4[j]])
+        size_tmp = np.array(size[geneName]) * 200
+        cv_tmp = np.array(cv[geneName])
+
+        if geneName == &#39;THRA1/BTR&#39;:
+            geneName = &#39;THRA1_BTR&#39;
+        if geneName == &#39;THRA1/BTR_flip&#39;:
+            geneName = &#39;THRA1_BTR_flip&#39;
+
+        plt.figure(figsize=(12, 11))
+
+        plt.subplot(2, 1, 1)
+        plt.xlim((-0.5,9.5))
+        plt.xlabel(&#39;Timepoints&#39;)
+        plt.ylabel(&#39;Gene Expression&#39;)
+        plt.plot(x, y_mean, linewidth=2.5, alpha=0.6,)
+        plt.scatter(x, y_mean, marker=&#39;o&#39;, s=size_tmp, c=cv_tmp, cmap=&#39;rainbow&#39;, alpha=0.8)
+        plt.boxplot(y, sym=&#39;o&#39;, showmeans=True, meanline=True, meanprops={&#39;linestyle&#39;:&#39;-&#39;, &#39;color&#39;:&#39;orange&#39;}, medianprops={&#39;linestyle&#39;:&#39;&#39;}, positions=x)
+        plt.colorbar(label=&quot;Coefficient of Variation&quot;, )
+        plt.xticks(x, x_label)
+        plt.title(&#39;Celltype:{}   Gene:{}&#39;.format(celltype, geneName))
+        for s in [50, 100, 200]:
+            plt.scatter([], [], c=&#39;k&#39;, alpha=0.3, s=s,
+                        label=str(int(s/2)) + &#39;%&#39;)
+        plt.legend(scatterpoints=1, frameon=False, labelspacing=1, title=&#39;Non-zero Percentage&#39;, loc=&#39;best&#39;)
+
+        plt.subplot(2, 1, 2)
+        plt.xlim((-0.5,9.5))
+        plt.xlabel(&#39;Timepoints&#39;)
+        plt.ylabel(&#39;Gene Expression&#39;)
+        plt.plot(x, data1, linewidth=2.5, label = &#39;P1&#39;)
+        plt.plot(x, data2, linewidth=2.5, label = &#39;P2&#39;)
+        plt.plot(x, data3, linewidth=2.5, label = &#39;P3&#39;)
+        plt.plot(x, data4, linewidth=2.5, label = &#39;P4&#39;)
+        plt.xticks(x, x_label)
+        plt.legend()
+        plt.title(&#39;Celltype:{}   Gene:{}&#39;.format(celltype, geneName))
+
+        plt.savefig(&#39;{}/{} among 4 people.pdf&#39;.format(path, geneName))
+        plt.close()
+
+    overTime = time.time()
+    spendtime = (overTime - startTime) / 60
+    print(&#39;{} was Down! Time taken: {} mins&#39;.format(celltype, spendtime))</code></pre>
+<pre class="r"><code>library(clusterProfiler)
+library(org.Hs.eg.db)
+celltypes &lt;- c(&#39;Naïve CD4+ T cells&#39;, &#39;Naïve CD8+ T cells&#39;, &#39;NK/NKT&#39;, &#39;Memory B&#39;, &#39;Naïve B&#39;,
+                &#39;Intermediate B&#39;, &#39;CD14+ Mono&#39;, &#39;CD16+ Mono&#39;, &#39;CD4+ Tcm&#39;, &#39;Plasmacytoid DC&#39;, &#39;Treg&#39;, 
+                &#39;CD8+ Tem&#39;, &#39;MAIT&#39;)
+cell_type&lt;-gsub(&#39;/&#39;,&#39;_&#39;,cell_type)
+cell_type&lt;-gsub(&#39; &#39;,&#39;_&#39;,cell_type)
+KEGG_DEG&lt;-list()
+GO_DEG &lt;- list()
+clustering=list()
+filterd=list()
+filterd1=list()
+trans_KEGG_DEG=list()
+trans_GO_DEG=list()
+temp &lt;- list()
+
+
+for( i in 1:length(cell_type)){
+print(cell_type[i])
+annotation&lt;-read.table(paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/gene_clustering/filtered/filtered_&#39;,cell_type[i],&#39;.csv&#39;),header = TRUE,sep = &quot;,&quot;)
+colnames(annotation)&lt;-gsub(&#39; &#39;,&#39;.&#39;,colnames(annotation))
+del &lt;- grep(&#39;_flip&#39;, annotation$gene, value = F)
+annotation &lt;- annotation[-del,]
+print(dim(annotation))
+clustering[[i]]&lt;-levels(factor(annotation$clustering.results))
+print(paste(cell_type[i],&#39; is filtered&#39;))
+
+
+for( j in 1:length(clustering[[i]])){
+    print(clustering[[i]][[j]])
+    clustering_gene_table&lt;-annotation[annotation$clustering.results==clustering[[i]][[j]],]
+    clustering_gene_table$gene&lt;-as.character(clustering_gene_table$gene)
+tryCatch(expr = {
+  df &lt;-(bitr(clustering_gene_table$gene, fromType = &quot;SYMBOL&quot;,toType = c( &quot;ENTREZID&quot;),OrgDb=&quot;org.Hs.eg.db&quot;))
+KEGG_DEG[[j]] &lt;- enrichKEGG(df$ENTREZID,organism = &quot;hsa&quot;,pAdjustMethod = &quot;none&quot;, pvalueCutoff = 0.05)
+temp[[j]] &lt;- setReadable(KEGG_DEG[[j]],OrgDb = &quot;org.Hs.eg.db&quot;,keyType = &quot;ENTREZID&quot;)
+trans_KEGG_DEG[[j]]&lt;-temp[[j]]
+    trans_KEGG_DEG[[j]]@result$clustering&lt;-rep(clustering[[i]][[j]], nrow(trans_KEGG_DEG[[j]]@result))
+    print(paste0(cell_type[i],&#39;_&#39;,clustering[[i]][[j]],&#39;KEGG is done&#39;))
+},
+error = function(e){          
+    print(&#39;bug&#39;)
+    }
+  )}
+write.csv(do.call(rbind,lapply(trans_KEGG_DEG,as.data.frame)),file=paste(&#39;/database/wangrong/Results/0712_ATAC+RNA/gene_clustering/enrichment_kegg/&#39;,cell_type[i],&#39;_KEGG.csv&#39;))
+
+}  
+
+KEGG_list &lt;- list()
+for( k in 1:length(cell_type)){
+KEGG_list[[k]] &lt;- read.table(paste(&#39;/database/wangrong/Results/0712_ATAC+RNA/gene_clustering/enrichment_kegg/6.23/6.7_&#39;,cell_type[k],&#39;_KEGG.csv&#39;),header = TRUE,sep = &quot;,&quot;)
+KEGG_list[[k]]$cell_type &lt;- rep(cell_type[k], nrow(KEGG_list[[k]]))
+}
+ALL_KEGG &lt;- do.call(rbind,KEGG_list)
+filter_all_KEGG &lt;- ALL_KEGG[ALL_KEGG$Count&gt;2,]
+sord_all_KEGG &lt;- filter_all_KEGG[order(filter_all_KEGG$pvalue),]
+ write.csv(sord_all_KEGG,file=&#39;/database/wangrong/Results/0712_ATAC+RNA/gene_clustering/enrichment_kegg/6.23/sord_all_KEGG_.csv&#39;)</code></pre>
+</div>
+<div id="mashr-analysis" class="section level2">
+<h2>Mashr analysis</h2>
+<p>The multivariate adaptive shrinkage in R (mashr) method was used to
+estimate the effect of ten time points on gene expression in different
+cell types We assume that we have measurements in multiple timepoints,
+and want to estimate the deviation in each timepoints from the
+pre-vaccination</p>
+<pre class="r"><code>library(scater)
+library(Seurat)
+library(tidyverse)
+library(cowplot)
+library(Matrix.utils)
+library(edgeR)
+library(dplyr)
+library(magrittr)
+library(Matrix)
+library(purrr)
+library(reshape2)
+library(S4Vectors)
+library(tibble)
+library(SingleCellExperiment)
+library(pheatmap)
+library(apeglm)
+library(png)
+library(DESeq2)
+library(RColorBrewer)
+library(limma)
+library(edgeR)
+library(mashr)
+
+
+counts &lt;- pbmc@assays$RNA@counts
+metadata&lt;-pbmc@meta.data
+metadata&lt;-metadata[,c(&quot;orig.ident&quot;,&quot;Participants&quot;,&quot;Timepoints&quot;,&quot;celltype&quot;)]
+metadata$orig.ident &lt;- gsub(&quot;-&quot;,&quot;&quot;,metadata$orig.ident)
+metadata$Timepoints &lt;- as.factor(metadata$Timepoints)
+metadata$Participants &lt;- as.factor(metadata$Participants)
+metadata$orig.ident &lt;- as.factor(metadata$orig.ident)
+
+sce &lt;- SingleCellExperiment(assays = list(counts = counts), colData = metadata)
+#groups &lt;- colData(sce)[, c(&quot;celltype&quot;, &quot;orig.ident&quot;)]
+Timepoints &lt;- purrr::set_names(levels(sce$Timepoints))
+nt &lt;- length(Timepoints)
+celltype &lt;- purrr::set_names(levels(sce$celltype))
+na&lt;- length(celltype)
+Participants &lt;- purrr::set_names(levels(sce$Participants))
+np&lt;- length(Participants)
+orig.ident &lt;- purrr::set_names(levels(sce$orig.ident))
+nr&lt;- length(orig.ident)
+table(sce$orig.ident)               
+nr_cells &lt;- as.numeric(table(sce$orig.ident))
+mr &lt;- match(orig.ident, sce$orig.ident)
+eia &lt;- data.frame(colData(sce)[mr, ], nr_cells, row.names = NULL) 
+groups &lt;- colData(sce)[, c(&quot;celltype&quot;,&quot;orig.ident&quot;)]
+pb1 &lt;- aggregate.Matrix(t(counts(sce)), groupings = groups, fun = &quot;sum&quot;) 
+class(pb1)
+dim(pb1)
+pb1[1:6, 1:6]
+splitf &lt;- sapply(stringr::str_split(rownames(pb1), pattern = &quot;_&quot;,  n = 2), `[`, 1)
+pb2 &lt;- split.data.frame(pb1, factor(splitf)) %&gt;%lapply(function(u) set_colnames(t(u), stringr::str_extract(rownames(u), &quot;(?&lt;=_)[:alnum:]+&quot;)))
+str(pb2)
+options(width = 100)
+table(sce$celltype, sce$orig.ident)
+
+get_sample_ids &lt;- function(x){
+        pb2[[x]] %&gt;%colnames()
+}
+de_samples &lt;- map(1:length(celltype ), get_sample_ids) %&gt;%unlist()
+
+samples_list &lt;- map(1:length(celltype), get_sample_ids)
+get_cluster_ids &lt;- function(x){
+        rep(names(pb2)[x], each = length(samples_list[[x]]))
+}
+de_cluster_ids &lt;- map(1:length(celltype), get_cluster_ids) %&gt;%unlist()
+
+gg_df &lt;- data.frame(celltype = de_cluster_ids,orig.ident = de_samples)
+gg_df &lt;- left_join(gg_df, eia[, c(&quot;orig.ident&quot;,&quot;Timepoints&quot;, &quot;Participants&quot;)]) 
+metadata &lt;- gg_df %&gt;%dplyr::select(celltype , orig.ident, Timepoints, Participants)         
+
+metadata$celltype &lt;- as.factor(metadata$celltype)
+clusters &lt;- levels(metadata$celltype)
+save(pb2,metadata, clusters, file = &quot;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/6.21.psudocelltype.matrix.RData&quot;)
+
+
+
+load( file = &quot;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/6.21.psudocelltype.matrix.RData&quot;)
+
+clusters&lt;-gsub(&quot;/&quot;,&quot;_&quot;,clusters)
+metadata$celltype&lt;-gsub(&quot;/&quot;,&quot;_&quot;,metadata$celltype)
+names(pb2)&lt;-gsub(&quot;/&quot;,&quot;_&quot;,names(pb2))
+
+for( i in 1:length(clusters)){
+print(clusters[i])
+
+cluster_metadata &lt;- metadata[which(metadata$celltype == clusters[i]), ]
+cluster_metadata &lt;- cluster_metadata[which(cluster_metadata$Timepoints != &quot;Day171&quot;),]
+cluster_metadata &lt;- cluster_metadata[which(cluster_metadata$Timepoints != &quot;Day185&quot;),]
+print(head(cluster_metadata))
+rownames(cluster_metadata) &lt;- cluster_metadata$orig.ident
+counts &lt;- pb2[[clusters[i]]]
+cluster_counts &lt;- data.frame(counts[, which(colnames(counts) %in% rownames(cluster_metadata))])   
+dim(cluster_counts)
+
+condition &lt;- factor(cluster_metadata$Timepoints, levels = c(c(&quot;Day0&quot;,&quot;Day1&quot;,&quot;Day3&quot;,&quot;Day6&quot;,&quot;Day14&quot;,&quot;Day30&quot;,&quot;Day31&quot;,&quot;Day33&quot;,&quot;Day36&quot;,&quot;Day44&quot;) ) )
+design &lt;- model.matrix(~0 + condition ,cluster_metadata)
+
+y &lt;- DGEList(cluster_counts)
+y &lt;- calcNormFactors(y)
+
+v = voom(y, design)
+
+timepoints.gene &lt;- lmFit( v , design)
+timepoints.Bayes.gene &lt;- eBayes(timepoints.gene)
+
+timepoints.condition.gene.mean &lt;-timepoints.Bayes.gene$coefficients[, 1:10]
+timepoints.condition.gene.se &lt;- ( timepoints.Bayes.gene$stdev.unscaled * sqrt(timepoints.Bayes.gene$s2.post) )[,1:10]
+
+colnames(timepoints.condition.gene.mean) &lt;- colnames(timepoints.condition.gene.se) &lt;- gsub(&quot;condition&quot;,&quot;&quot;, colnames(timepoints.condition.gene.se))
+#machr
+data.gene = mash_set_data(timepoints.condition.gene.mean, timepoints.condition.gene.se)
+data.L.gene = mash_update_data(data.gene, ref = 1)
+U.c.gene = cov_canonical(data.L.gene)
+print(head(names(U.c.gene)))
+mashcontrast.model.gene = mash(data.L.gene, U.c.gene  )
+
+pdf(file=paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/7.15_timepoints_&#39;,clusters[[i]],&#39;.pairwise_sharing.pdf&#39;))
+corrplot(get_pairwise_sharing(mashcontrast.model.gene, factor=0.5, lfsr_thresh = 0.1) , method=&#39;color&#39;, cl.lim=c(0,1), type=&#39;upper&#39;, addCoef.col = &quot;black&quot;, tl.col=&quot;black&quot;, tl.srt=45, title = &#39;Pairwise Sharing by Magnitude\n(&lt; Factor of 2)&#39;, mar = c(4,0,4,0))
+dev.off()
+print(head( get_pm(mashcontrast.model.gene) ))
+
+est_pi &lt;- data.frame( Type = factor( names(get_estimated_pi(mashcontrast.model.gene) ), levels = c(names(get_estimated_pi(mashcontrast.model.gene) )) ), 
+                      estimates =  get_estimated_pi(mashcontrast.model.gene)  )
+
+pdf(file=paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/7.15_timepoints_&#39;,clusters[[i]],&#39;.est_pi.pdf&#39;))
+ggplot( est_pi, aes( x = Type, y = estimates) )+
+    geom_bar(stat = &quot;identity&quot;)+
+    ylab(expression( pi) )+
+    theme_classic()+
+    theme(text = element_text(color = &quot;black&quot;, size = 18), axis.text = element_text(color = &quot;black&quot;), axis.text.x = element_text(angle = -45, vjust = 0), plot.margin = margin(r = 10, b = 10) )+
+    scale_y_continuous(expand = c(0,0))
+dev.off()
+sig.DEG_ID &lt;- get_significant_results(mashcontrast.model.gene,thresh = 0.1) 
+
+mashResult.gene &lt;- get_pm(mashcontrast.model.gene)
+colnames(mashResult.gene) &lt;- gsub(&quot;-Day0&quot;,&quot;.log2FC&quot;,colnames(mashResult.gene))
+mashResult.gene &lt;- cbind(mashResult.gene, get_lfsr( mashcontrast.model.gene ) )
+colnames(mashResult.gene) &lt;- gsub(&quot;-Day0&quot;,&quot;.lfsr&quot;,colnames(mashResult.gene))
+sig.mashResults.gene&lt;- mashResult.gene[sig.DEG_ID,]
+sig.mashResults.gene&lt;-as.data.frame(sig.mashResults.gene)
+sig.mashResults.gene$total.lfsr&lt;-rowSums(sig.mashResults.gene[, c(10,11,12,13,14,15,16,17,18)])
+sig.mashResults.gene&lt;-sig.mashResults.gene[order(sig.mashResults.gene$total.lfsr),]
+sig.mashResults.gene&lt;-sig.mashResults.gene[1:25,]
+write.csv(sig.mashResults.gene,file=paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/7.15_timepoints_&#39;,clusters[[i]],&#39;.sig.mashResults.gene.top25.csv&#39;))
+
+
+sig.mashResults.gene_melt &lt;- data.frame( geneName = rep( rownames(sig.mashResults.gene), 9 ),
+                                                    posterior.log2FC = c(sig.mashResults.gene$Day1.log2FC,
+                                                                        sig.mashResults.gene$Day3.log2FC,
+                                                                        sig.mashResults.gene$Day6.log2FC,
+                                                                        sig.mashResults.gene$Day14.log2FC,
+                                                                        sig.mashResults.gene$Day30.log2FC,
+                                                                        sig.mashResults.gene$Day31.log2FC,
+                                                                        sig.mashResults.gene$Day33.log2FC,
+                                                                        sig.mashResults.gene$Day36.log2FC,
+                                                                        sig.mashResults.gene$Day44.log2FC),
+                                                    lfsr = c( sig.mashResults.gene$Day1.lfsr,
+                                                              sig.mashResults.gene$Day3.lfsr,
+                                                              sig.mashResults.gene$Day6.lfsr,
+                                                              sig.mashResults.gene$Day14.lfsr,
+                                                              sig.mashResults.gene$Day30.lfsr,
+                                                              sig.mashResults.gene$Day31.lfsr,
+                                                              sig.mashResults.gene$Day33.lfsr,
+                                                              sig.mashResults.gene$Day36.lfsr,
+                                                              sig.mashResults.gene$Day44.lfsr),
+                                                    condition = c( rep(&quot;Day1&quot;, nrow(sig.mashResults.gene) ),
+                                                                   rep(&quot;Day3&quot;, nrow(sig.mashResults.gene) ),
+                                                                   rep(&quot;Day6&quot;, nrow(sig.mashResults.gene) ),
+                                                                   rep(&quot;Day14&quot;, nrow(sig.mashResults.gene) ), 
+                                                                   rep(&quot;Day30&quot;, nrow(sig.mashResults.gene) ),
+                                                                   rep(&quot;Day31&quot;, nrow(sig.mashResults.gene) ),
+                                                                   rep(&quot;Day33&quot;, nrow(sig.mashResults.gene) ),
+                                                                   rep(&quot;Day36&quot;, nrow(sig.mashResults.gene) ),
+                                                                   rep(&quot;Day44&quot;, nrow(sig.mashResults.gene) )))
+
+sig.mashResults.gene_melt$condition &lt;- factor(sig.mashResults.gene_melt$condition , levels = c(&quot;Day1&quot;,&quot;Day3&quot;,&quot;Day6&quot;,&quot;Day14&quot;,&quot;Day30&quot;,&quot;Day31&quot;,&quot;Day33&quot;,&quot;Day36&quot;,&quot;Day44&quot;) ) 
+pdf(file=paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/7.15_timepoints_&#39;,clusters[[i]],&#39;.sig.mashResults.gene.pdf&#39;))
+ggplot(sig.mashResults.gene_melt, aes( x = condition, y = geneName, size = -log(lfsr), color = posterior.log2FC ) )+geom_point()+scale_color_gradientn( colors=c(&quot;cyan&quot;,&quot;red&quot; ))+scale_size_continuous(breaks= -log(c(0.4,0.1,0.05,0.01,0.001)),labels=c(0.4,0.1,0.05,0.01,0.001), range = c(0.5,8),  name = &quot;lfsr&quot; )+geom_point(data =sig.mashResults.gene_melt[sig.mashResults.gene_melt$lfsr&lt;0.1,], aes( x = condition, y = geneName, size = -log(lfsr) ), shape = 1, color = &quot;black&quot; )+ggtitle(&quot;Significant in at least one conditions&quot;)+theme_bw()+theme(
+                   panel.grid.minor = element_blank(), axis.line = element_line(colour = &quot;black&quot;,size = 1),
+                   plot.title = element_text(size = 16, hjust = 0.5),
+                   axis.title=element_blank(),
+                   legend.title=element_text(size=15 ),legend.text = element_text(size = 20),
+                   axis.text.x = element_text(size = 15,angle = -20, vjust = 0.3 , color = &quot;black&quot;) ,axis.text.y = element_text(size = 15, color = &quot;black&quot; ) )
+dev.off()
+print(paste0(clusters[i],&#39;is done!&#39;))
+}
+
+marshr.gene&lt;-list()
+for (i in 1:length(clusters)){
+print(clusters[i])
+marshr.gene[[i]] &lt;- read.table(file=paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/6.24_timepoints_&#39;,clusters[[i]],&#39;.sig.mashResults.gene.top25.csv&#39;),sep = &quot;,&quot;,header=TRUE)
+marshr.gene[[i]]$celltype&lt;-rep(clusters[[i]],25)
+}
+all_mashr&lt;-do.call(rbind,marshr.gene)</code></pre>
+<p>we have used PCA to compute data driven covariances. The analysis
+result is the same as the classic of covariance matrix</p>
+<pre class="r"><code>load( file = &quot;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/6.21.psudocelltype.matrix.RData&quot;)
+
+clusters&lt;-gsub(&quot;/&quot;,&quot;_&quot;,clusters)
+metadata$celltype&lt;-gsub(&quot;/&quot;,&quot;_&quot;,metadata$celltype)
+names(pb2)&lt;-gsub(&quot;/&quot;,&quot;_&quot;,names(pb2))
+m2&lt;-list()
+for( i in 1:length(clusters)){
+print(clusters[i])
+
+cluster_metadata &lt;- metadata[which(metadata$celltype == clusters[i]), ]
+cluster_metadata &lt;- cluster_metadata[which(cluster_metadata$Timepoints != &quot;Day171&quot;),]
+cluster_metadata &lt;- cluster_metadata[which(cluster_metadata$Timepoints != &quot;Day185&quot;),]
+print(head(cluster_metadata))
+rownames(cluster_metadata) &lt;- cluster_metadata$orig.ident
+counts &lt;- pb2[[clusters[i]]]
+cluster_counts &lt;- data.frame(counts[, which(colnames(counts) %in% rownames(cluster_metadata))])   
+dim(cluster_counts)
+
+condition &lt;- factor(cluster_metadata$Timepoints, levels = c(c(&quot;Day0&quot;,&quot;Day1&quot;,&quot;Day3&quot;,&quot;Day6&quot;,&quot;Day14&quot;,&quot;Day30&quot;,&quot;Day31&quot;,&quot;Day33&quot;,&quot;Day36&quot;,&quot;Day44&quot;) ) )
+design &lt;- model.matrix(~0 + condition ,cluster_metadata)
+
+y &lt;- DGEList(cluster_counts)
+y &lt;- calcNormFactors(y)
+
+v = voom(y, design)
+
+timepoints.gene &lt;- lmFit( v , design)
+timepoints.Bayes.gene &lt;- eBayes(timepoints.gene)
+
+timepoints.condition.gene.mean &lt;-timepoints.Bayes.gene$coefficients[, 1:10]
+timepoints.condition.gene.se &lt;- ( timepoints.Bayes.gene$stdev.unscaled * sqrt(timepoints.Bayes.gene$s2.post) )[,1:10]
+
+colnames(timepoints.condition.gene.mean) &lt;- colnames(timepoints.condition.gene.se) &lt;- gsub(&quot;condition&quot;,&quot;&quot;, colnames(timepoints.condition.gene.se))
+#select strong signals
+data.gene = mash_set_data(timepoints.condition.gene.mean, timepoints.condition.gene.se)
+m.1by1 = mash_1by1(data.gene)
+strong.subset = get_significant_results(m.1by1,0.05)
+
+# identify a random subset of 5000 tests
+random.subset = sample(1:nrow(timepoints.condition.gene.mean),5000)
+# create random and strong sets
+data.temp = mash_set_data(timepoints.condition.gene.mean[random.subset,],timepoints.condition.gene.se[random.subset,])
+Vhat = estimate_null_correlation_simple(data.temp)
+rm(data.temp)
+data.random = mash_set_data(timepoints.condition.gene.mean[random.subset,],timepoints.condition.gene.se[random.subset,],V=Vhat)
+data.strong = mash_set_data(timepoints.condition.gene.mean[strong.subset,],timepoints.condition.gene.se[strong.subset,], V=Vhat)
+# empirical Bayes matrix factorization
+U.f = cov_flash(data.strong, factors=&quot;nonneg&quot;, tag=&quot;non_neg&quot;, var_type=&quot;constant&quot;)
+
+#Obtain initial data-driven covariance matrices
+U.pca = cov_pca(data.strong,5)
+print(names(U.pca))
+#Apply Extreme Deconvolution
+U.ed = cov_ed(data.strong, c(U.f, U.pca))
+U.c = cov_canonical(data.random)
+#Run mash
+m = mash(data.random, Ulist = c(U.ed,U.c), outputlevel = 1)
+m2[[i]] = mash(data.strong, g=get_fitted_g(m), fixg=TRUE)
+
+head(get_lfsr(m2[[i]]))
+
+print(head(names(m2[[i]])))
+
+pdf(file=paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/2.21_timepoints_&#39;,clusters[[i]],&#39;.pairwise_sharing.pdf&#39;))
+corrplot(get_pairwise_sharing(m2[[i]], factor=0.5, lfsr_thresh = 0.1) , method=&#39;color&#39;, cl.lim=c(0,1), type=&#39;upper&#39;, addCoef.col = &quot;black&quot;, tl.col=&quot;black&quot;, tl.srt=45, title = &#39;Pairwise Sharing by Magnitude\n(&lt; Factor of 2)&#39;, mar = c(4,0,4,0))
+dev.off()
+print(head( get_pm(m2[[i]]) ))
+
+est_pi &lt;- data.frame( Type = factor( names(get_estimated_pi(m2[[i]]) ), levels = c(names(get_estimated_pi(m2[[i]]) )) ), 
+                      estimates =  get_estimated_pi(m2[[i]])  )
+
+pdf(file=paste0(&#39;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/2.21_data.driven_&#39;,clusters[[i]],&#39;.est_pi.pdf&#39;))
+ggplot( est_pi, aes( x = Type, y = estimates) )+
+    geom_bar(stat = &quot;identity&quot;)+
+    ylab(expression( pi) )+
+    theme_classic()+
+    theme(text = element_text(color = &quot;black&quot;, size = 18), axis.text = element_text(color = &quot;black&quot;), axis.text.x = element_text(angle = -45, vjust = 0), plot.margin = margin(r = 10, b = 10) )+
+    scale_y_continuous(expand = c(0,0))
+dev.off()
+
+print(paste0(clusters[i],&#39;is done!&#39;))
+}</code></pre>
+<p>To identify patterns of gene expression changes, we performed
+expression clustering of mashr significantly differentially expressed
+genes based on the blood transcriptome modules (BTM)using the GSVA
+software package.</p>
+<pre class="r"><code>geneset &lt;- read.gmt(file.path(&quot;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/BTM_for_GSEA_20131008.gmt&quot;))
+geneset &lt;- read.gmt(file.path(&quot;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/BTM_for_GSEA_20131008.gmt&quot;))
+aa &lt;- marshr.gene[[i]]
+aa$genes=aa$X
+aa.genes&lt;- aa %&gt;% arrange(desc(Day1.lfsr)) %&gt;% dplyr::select(genes,Day1.lfsr)
+ranks&lt;- deframe(aa.genes)
+BTM_list &lt;- split(geneset$gene, geneset$term)
+fgseaRes&lt;- fgsea(BTM_list, stats = ranks)
+
+saveRDS(BTM_list,&quot;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/BTM_list.rds&quot;)
+
+#GSVA
+topgene &lt;- read.table(file=&quot;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/all.sig.mashResults.gene.top25.csv&quot;,sep = &quot;,&quot;,header=TRUE)
+all.gene.expr &lt;-  as.matrix(rename_pbmc[[&quot;RNA&quot;]]@data)
+part.gene.expr &lt;-  as.matrix(rename_pbmc[[&quot;RNA&quot;]]@data)[topgene[,2],]
+saveRDS(part.gene.expr,&quot;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/part.gene.expr&quot;)
+library(GSVA)
+part.gsvs.result &lt;- GSVA::gsva(part.gene.expr, BTM_list,kcdf=&#39;Gaussian&#39;)
+library(dendextend)
+library(circlize)
+library(RColorBrewer)
+colors = colorRampPalette(rev(brewer.pal(n = 7, name =&quot;RdYlBu&quot;)))(100)
+values &lt;- seq(-0.8, 0.8, length.out = 101)[-101]
+col_fun = colorRamp2(values, colors)
+levels=c(&quot;Naïve B&quot;,&quot; Intermediate B&quot;,&quot;Plasmablasts/Memrary B&quot;,
+          &quot;Naïve CD4+ T cells&quot;,&quot;CD4+ Tcm&quot;,&quot;Treg&quot;,
+          &quot;Naïve CD8+ T cells&quot;,&quot;CD8+ Tem&quot;,&quot;MAIT&quot;,&quot;NK/NKT&quot;,
+          &quot;CD14+ Mono&quot;,&quot;CD16+ Mono&quot;,&quot;Plasmacytoid DC&quot;)
+c13 &lt;- c(&quot;#A6CEE3&quot; ,&quot;#1F78B4&quot;, &quot;#B2DF8A&quot;, &quot;#33A02C&quot; ,&quot;#FB9A99&quot; ,&quot;#FDBF6F&quot; ,&quot;#FF7F00&quot; ,&quot;#CAB2D6&quot; ,&quot;#6A3D9A&quot;, &quot;#FFFF99&quot;, &quot;#B15928&quot;, &quot;#66C2A5&quot; ,&quot;#FC8D62&quot;)
+names(c13) &lt;- levels
+color_match &lt;- c(&quot;Naïve B&quot; = &quot;#A6CEE3&quot;, &quot;Intermediate B&quot; = &quot;#1F78B4&quot;,&quot;Plasmablasts/Memrary B&quot;=&quot;#B2DF8A&quot;,&quot;Naïve CD4+ T cells&quot;=&quot;#33A02C&quot;,&quot;CD4+ Tcm&quot;=&quot;#FB9A99&quot;,&quot;Treg&quot;=&quot;#FDBF6F&quot;,&quot;Naïve CD8+ T cells&quot;=&quot;#FF7F00&quot;,&quot;CD8+ Tem&quot;=&quot;#CAB2D6&quot;,&quot;MAIT&quot;= &quot;#6A3D9A&quot;,&quot;NK/NKT&quot;=&quot;#FFFF99&quot;,&quot;CD14+ Mono&quot;=&quot;#B15928&quot;,&quot;CD16+ Mono&quot;=&quot;#66C2A5&quot;,&quot;Plasmacytoid DC&quot;=&quot;#FC8D62&quot;)
+all.meta &lt;- rename_pbmc@meta.data
+test_meta &lt;- all.meta[1:5000,]
+annotation_data &lt;- test_meta
+#colnames(annotation_data) &lt;- &quot;cellType&quot;
+
+library(ComplexHeatmap)
+top_annotation &lt;- HeatmapAnnotation(df = annotation_data$celltype,
+ col = list(Type = color_match))
+ 
+top_anno &lt;- HeatmapAnnotation(cluster = anno_block(gp = gpar(fill = c13),
+labels = levels(annotation_data$celltype),
+                    labels_gp = gpar(cex = 0.5, col = &quot;white&quot;)))
+
+Heatmap(test.gsvs.result, name = &quot;GSVA&quot;, col = col_fun,cluster_rows = T,cluster_columns = F,show_row_names = T,
+        show_column_names = F,top_annotation = top_annotation,column_split = annotation_data$celltype)
+
+Heatmap(test.gsvs.result,col = col_fun,
+        cluster_rows = T,
+        cluster_columns = T,
+        show_column_names = F,
+        show_row_names = T,
+        column_split = annotation_data$celltype,
+        top_annotation = top_anno, 
+        column_title = NULL )
+
+Heatmap(test.gsvs.result,
+        cluster_rows = T,
+        cluster_columns = T,
+        show_column_names = FALSE,
+        show_row_names = FALSE,
+        column_split = annotation_data$celltype)
+
+
+#subset
+sub.gene.expr &lt;-  as.matrix(sub_pbmc[[&quot;RNA&quot;]]@data)[topgene[,2],]
+saveRDS(sub.gene.expr,&quot;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/marsh/sub.gene.expr.rds&quot;)
+library(GSVA)
+sub.gsvs.result &lt;- GSVA::gsva(sub.gene.expr, BTM_list,kcdf=&#39;Gaussian&#39;)
+library(dendextend)
+library(circlize)
+library(RColorBrewer)
+colors = colorRampPalette(rev(brewer.pal(n = 7, name =&quot;RdYlBu&quot;)))(100)
+values &lt;- seq(-0.8, 0.8, length.out = 101)[-101]
+col_fun = colorRamp2(values, colors)
+levels=c(&quot;Naïve B&quot;,&quot; Intermediate B&quot;,&quot;Plasmablasts/Memrary B&quot;,
+          &quot;Naïve CD4+ T cells&quot;,&quot;CD4+ Tcm&quot;,&quot;Treg&quot;,
+          &quot;Naïve CD8+ T cells&quot;,&quot;CD8+ Tem&quot;,&quot;MAIT&quot;,&quot;NK/NKT&quot;,
+          &quot;CD14+ Mono&quot;,&quot;CD16+ Mono&quot;,&quot;Plasmacytoid DC&quot;)
+c13 &lt;- c(&quot;#A6CEE3&quot; ,&quot;#1F78B4&quot;, &quot;#B2DF8A&quot;, &quot;#33A02C&quot; ,&quot;#FB9A99&quot; ,&quot;#FDBF6F&quot; ,&quot;#FF7F00&quot; ,&quot;#CAB2D6&quot; ,&quot;#6A3D9A&quot;, &quot;#FFFF99&quot;, &quot;#B15928&quot;, &quot;#66C2A5&quot; ,&quot;#FC8D62&quot;)
+names(c13) &lt;- levels
+color_match &lt;- c(&quot;Naïve B&quot; = &quot;#A6CEE3&quot;, &quot;Intermediate B&quot; = &quot;#1F78B4&quot;,&quot;Plasmablasts/Memrary B&quot;=&quot;#B2DF8A&quot;,&quot;Naïve CD4+ T cells&quot;=&quot;#33A02C&quot;,&quot;CD4+ Tcm&quot;=&quot;#FB9A99&quot;,&quot;Treg&quot;=&quot;#FDBF6F&quot;,&quot;Naïve CD8+ T cells&quot;=&quot;#FF7F00&quot;,&quot;CD8+ Tem&quot;=&quot;#CAB2D6&quot;,&quot;MAIT&quot;= &quot;#6A3D9A&quot;,&quot;NK/NKT&quot;=&quot;#FFFF99&quot;,&quot;CD14+ Mono&quot;=&quot;#B15928&quot;,&quot;CD16+ Mono&quot;=&quot;#66C2A5&quot;,&quot;Plasmacytoid DC&quot;=&quot;#FC8D62&quot;)
+sub.meta &lt;- sub_pbmc@meta.data
+
+annotation_data &lt;- sub_meta
+#colnames(annotation_data) &lt;- &quot;cellType&quot;
+
+library(ComplexHeatmap)
+top_annotation &lt;- HeatmapAnnotation(df = annotation_data$celltype,
+ col = list(Type = color_match))
+ 
+top_anno &lt;- HeatmapAnnotation(cluster = anno_block(gp = gpar(fill = c13),
+labels = levels(annotation_data$celltype),
+                    labels_gp = gpar(cex = 0.5, col = &quot;white&quot;)))
+
+Heatmap(sub.gsvs.result, name = &quot;GSVA&quot;, col = col_fun,cluster_rows = T,cluster_columns = F,show_row_names = T,
+        show_column_names = F,top_annotation = top_annotation,column_split = annotation_data$celltype)
+        
+Heatmap(sub.gsvs.result,
+        cluster_rows = T,
+        cluster_columns = T,
+        show_column_names = FALSE,
+        show_row_names = FALSE,
+        column_split = annotation_data$celltype)
+        
+Heatmap(sub.gsvs.result,col = col_fun,
+        cluster_rows = T,
+        cluster_columns = T,
+        show_column_names = F,
+        show_row_names = T,
+        column_split = annotation_data$celltype,
+        top_annotation = top_anno, 
+        column_title = NULL )</code></pre>
+</div>
+<div id="peak-to-gene-links" class="section level2">
+<h2>Peak-to-gene links</h2>
+<p>We performed an association analysis between peak accessibility and
+gene expression in the transcriptome to identify potential regulatory
+relationships.</p>
+<pre class="r"><code>##Co-accessibility
+motif_archr &lt;- addCoAccessibility(ArchRProj = motif_archr,reducedDims = &quot;LSI_Combined&quot;)
+cA &lt;- getCoAccessibility(ArchRProj = motif_archr ,corCutOff = 0.5, resolution = 1,returnLoops = TRUE)
+saveRDS(motif_archr,&quot;/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/5.30.Archr_down.RDS&quot;,compress = F)
+save(motif_archr,markersGE , markersPeaks,archrproj,motifPositions,cA, file = &quot;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/6.14.archr_motif.RData&quot;)
+archrproj &lt;- addPeak2GeneLinks(ArchRProj = archrproj,reducedDims = &quot;LSI_Combined&quot;,useMatrix = &quot;GeneExpressionMatrix&quot;)
+archrproj$celltype &lt;- factor(archrproj$celltype,levels = level)
+p2g &lt;- getPeak2GeneLinks(ArchRProj = archrproj,corCutOff = 0.45,resolution = 1,returnLoops = FALSE)
+metadata(p2g)[[1]]
+
+saveRDS(archrproj,&quot;/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/5.25.Peak2Gene.RDS&quot;,compress = F)
+pd &lt;- paletteDiscrete(archrproj$celltype)
+c13 &lt;- c(&quot;#A6CEE3&quot; ,&quot;#1F78B4&quot;, &quot;#B2DF8A&quot;, &quot;#33A02C&quot; ,&quot;#FB9A99&quot; ,&quot;#FDBF6F&quot; ,&quot;#FF7F00&quot; ,&quot;#CAB2D6&quot; ,&quot;#6A3D9A&quot;, &quot;#FFFF99&quot;, &quot;#B15928&quot;, &quot;#66C2A5&quot; ,&quot;#FC8D62&quot;)
+names(c13) &lt;- names(pd)
+plotPeak2GeneHeatmap(ArchRProj = archrproj, groupBy = &quot;celltype&quot;,palGroup = c13,palRNA= paletteer_c(&quot;grDevices::TealRose&quot;, 30))
+p2gmatrix &lt;- plotPeak2GeneHeatmap(ArchRProj = archrproj, groupBy = &quot;celltype&quot;,returnMatrices = TRUE,nPlot = 70000,palRNA= paletteer_c(&quot;grDevices::TealRose&quot;, 30))
+p2gmatrix_byp &lt;- plotPeak2GeneHeatmap(ArchRProj = archrproj, groupBy = &quot;Participants&quot;,returnMatrices = TRUE,nPlot = 50000,palGroup = c13,palRNA= paletteer_c(&quot;grDevices::TealRose&quot;, 30))
+plotPeak2GeneHeatmap(ArchRProj = archrproj, groupBy = &quot;Participants&quot;,nPlot = 50000,palGroup = c13,palRNA= paletteer_c(&quot;grDevices::TealRose&quot;, 30))
+
+p2g$geneName &lt;- mcols(metadata(p2g)$geneSet)$name[p2g$idxRNA]
+p2g$peakName &lt;- (metadata(p2g)$peakSet %&gt;% {paste0(seqnames(.), &quot;_&quot;, start(.), &quot;_&quot;, end(.))})[p2g$idxATAC]
+p2g.df.null &lt;- as.data.frame(p2g)
+hist(p2g.df.null$Correlation,col = &quot;lightblue&quot;,main = &quot;Histogram of peak-to-gene correlations&quot;,xlab = &quot;Correlation&quot;)
+hist(p2g.df.null$FDR,col=&quot;lightblue&quot;,main = &quot;Histogram peak-to-gene FDR&quot;,xlab = &quot;FDR&quot;)
+hist(table(p2g.df.null$idxRNA),main=&quot;Distribution of peaks per gene&quot;,xlab = &quot;Number of peaks per gene&quot;)
+hist(table(p2g.df.null$idxATAC),main=&quot;Distribution of gene per peaks&quot;,xlab = &quot;Number of gene per peaks&quot;)
+mean(table(p2g.df.null$idxRNA))
+mean(table(p2g.df.null$idxATAC))
+p2g.df.null$kmeans &lt;- p2gmatrix$RNA$kmeansId</code></pre>
+<p>To identify participant-specific and cell type-specific peak-to-gene
+correlations, we subset the dataset to include only the participants
+with barcodes of interest and recomputed the peak-to-gene links.</p>
+<pre class="r"><code>##participants specific p2g
+library(ChIPpeakAnno)
+library(stats)
+
+P1_cells&lt;-archrproj@cellColData[archrproj$Participants==&quot;P1&quot;,]
+P1_cells &lt;- as.data.frame(P1_cells)
+P1_cells &lt;- rownames(P1_cells)
+proj_P1 &lt;- subsetArchRProject(motif_archr,cells = P1_cells,outputDirectory = &quot;/database/wangrong/Results/0712_ATAC+RNA/ArchR/P1&quot;)
+proj_P1 &lt;- addPeak2GeneLinks(ArchRProj = proj_P1,reducedDims = &quot;LSI_Combined&quot;,useMatrix = &quot;GeneExpressionMatrix&quot;)
+plotPeak2GeneHeatmap(ArchRProj = proj_P1, groupBy = &quot;celltype&quot;,palGroup = c13,palRNA= paletteer_c(&quot;grDevices::TealRose&quot;, 30))
+p2g_p1 &lt;- getPeak2GeneLinks(ArchRProj = proj_P1,corCutOff = 0.45,resolution = 1,returnLoops = FALSE)
+p2g_p1$geneName &lt;- mcols(metadata(p2g_p1)$geneSet)$name[p2g_p1$idxRNA]
+p2g_p1$peakName &lt;- (metadata(p2g_p1)$peakSet %&gt;% {paste0(seqnames(.), &quot;_&quot;, start(.), &quot;_&quot;, end(.))})[p2g_p1$idxATAC]
+p2g_p1.df &lt;- as.data.frame(p2g_p1)
+p2g.df.null$paired_id &lt;- paste0(p2g.df.null$peakName,p2g.df.null$geneName)
+p2g_p1.df$paired_id &lt;- paste0(p2g_p1.df$peakName,p2g_p1.df$geneName)
+length(intersect(p2g_p1.df$paired_id,p2g.df.null$paired_id))
+#31230
+P2_cells&lt;-archrproj@cellColData[archrproj$Participants==&quot;P2&quot;,]
+P2_cells &lt;- as.data.frame(P2_cells)
+P2_cells &lt;- rownames(P2_cells)
+proj_P2 &lt;- subsetArchRProject(motif_archr,cells = P2_cells,outputDirectory = &quot;/database/wangrong/Results/0712_ATAC+RNA/ArchR/P2&quot;)
+proj_P2 &lt;- addPeak2GeneLinks(ArchRProj = proj_P2,reducedDims = &quot;LSI_Combined&quot;,useMatrix = &quot;GeneExpressionMatrix&quot;)
+plotPeak2GeneHeatmap(ArchRProj = proj_P2, groupBy = &quot;celltype&quot;,palGroup = c13,palRNA= paletteer_c(&quot;grDevices::TealRose&quot;, 30))
+p2g_p2 &lt;- getPeak2GeneLinks(ArchRProj = proj_P2,corCutOff = 0.45,resolution = 1,returnLoops = FALSE)
+p2g_p2$geneName &lt;- mcols(metadata(p2g_p2)$geneSet)$name[p2g_p2$idxRNA]
+p2g_p2$peakName &lt;- (metadata(p2g_p2)$peakSet %&gt;% {paste0(seqnames(.), &quot;_&quot;, start(.), &quot;_&quot;, end(.))})[p2g_p2$idxATAC]
+p2g_p2.df &lt;- as.data.frame(p2g_p2)
+p2g_p2.df$paired_id &lt;- paste0(p2g_p2.df$peakName,p2g_p2.df$geneName)
+length(intersect(p2g_p2.df$paired_id,p2g.df.null$paired_id))
+#33255
+P3_cells&lt;-archrproj@cellColData[archrproj$Participants==&quot;P3&quot;,]
+P3_cells &lt;- as.data.frame(P3_cells)
+P3_cells &lt;- rownames(P3_cells)
+proj_P3 &lt;- subsetArchRProject(motif_archr,cells = P3_cells,outputDirectory = &quot;/database/wangrong/Results/0712_ATAC+RNA/ArchR/P3&quot;,force = TRUE)
+proj_P3 &lt;- addPeak2GeneLinks(ArchRProj = proj_P3,reducedDims = &quot;LSI_Combined&quot;,useMatrix = &quot;GeneExpressionMatrix&quot;)
+plotPeak2GeneHeatmap(ArchRProj = proj_P3, groupBy = &quot;celltype&quot;,palGroup = c13,palRNA= paletteer_c(&quot;grDevices::TealRose&quot;, 30))
+p2g_p3 &lt;- getPeak2GeneLinks(ArchRProj = proj_P3,corCutOff = 0.45,resolution = 1,returnLoops = FALSE)
+p2g_p3$geneName &lt;- mcols(metadata(p2g_p3)$geneSet)$name[p2g_p3$idxRNA]
+p2g_p3$peakName &lt;- (metadata(p2g_p3)$peakSet %&gt;% {paste0(seqnames(.), &quot;_&quot;, start(.), &quot;_&quot;, end(.))})[p2g_p3$idxATAC]
+p2g_p3.df &lt;- as.data.frame(p2g_p3)
+p2g_p3.df$paired_id &lt;- paste0(p2g_p3.df$peakName,p2g_p3.df$geneName)
+length(intersect(p2g_p3.df$paired_id,p2g.df.null$paired_id))
+#31461
+P4_cells&lt;-archrproj@cellColData[archrproj$Participants==&quot;P4&quot;,]
+P4_cells &lt;- as.data.frame(P4_cells)
+P4_cells &lt;- rownames(P4_cells)
+proj_P4 &lt;- subsetArchRProject(motif_archr,cells = P4_cells,outputDirectory = &quot;/database/wangrong/Results/0712_ATAC+RNA/ArchR/P4&quot;,force = TRUE)
+proj_P4 &lt;- addPeak2GeneLinks(ArchRProj = proj_P4,reducedDims = &quot;LSI_Combined&quot;,useMatrix = &quot;GeneExpressionMatrix&quot;)
+plotPeak2GeneHeatmap(ArchRProj = proj_P4, groupBy = &quot;celltype&quot;,palGroup = c13,palRNA= paletteer_c(&quot;grDevices::TealRose&quot;, 30))
+p2g_p4 &lt;- getPeak2GeneLinks(ArchRProj = proj_P4,corCutOff = 0.45,resolution = 1,returnLoops = FALSE)
+p2g_p4$geneName &lt;- mcols(metadata(p2g_p4)$geneSet)$name[p2g_p4$idxRNA]
+p2g_p4$peakName &lt;- (metadata(p2g_p4)$peakSet %&gt;% {paste0(seqnames(.), &quot;_&quot;, start(.), &quot;_&quot;, end(.))})[p2g_p4$idxATAC]
+p2g_p4.df &lt;- as.data.frame(p2g_p4)
+p2g_p4.df$paired_id &lt;- paste0(p2g_p4.df$peakName,p2g_p4.df$geneName)
+length(intersect(p2g_p4.df$paired_id,p2g.df.null$paired_id))
+#38068
+#韦恩图
+library(VennDiagram)
+library(RColorBrewer)
+venn_ploy &lt;-venn.diagram(x = list(all_Participants = p2g.df.null$paired_id,P1 = p2g_p1.df$paired_id,P2 = p2g_p2.df$paired_id,P3 = p2g_p3.df$paired_id,P4 = p2g_p4.df$paired_id),filename = &quot;/home/wangrong/results/6.20.P2g.venn.tiff&quot;,fill = brewer.pal(5, &quot;Pastel2&quot;))
+save(proj_P1,proj_P2,proj_P3,proj_P4,archrproj,file = &quot;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/6.20.archr_p2g.RData&quot;)
+
+##top p2g in intersect group
+co_p2g&lt;- Reduce(intersect, list(p2g.df.null$paired_id,p2g_p1.df$paired_id,p2g_p2.df$paired_id,p2g_p3.df$paired_id,p2g_p4.df$paired_id))
+co_p2g_df &lt;- p2g.df.null[!is.na(match(p2g.df.null$paired_id,co_p2g)),]
+number_p &lt;- as.data.frame(table(co_p2g_df$geneName))
+mean(table(co_p2g_df$idxRNA))#6.584461
+number_p &lt;- number_p[number_p$Freq&gt;=7,]
+co_p2g_df_filter &lt;- co_p2g_df[which(co_p2g_df$geneName %in% number_p$Var1),]
+co_p2g_df_arrange &lt;- arrange(co_p2g_df_filter,desc(co_p2g_df_filter$Correlation))
+write_csv(co_p2g_df_arrange,file=&quot;/database/wangrong/Results/0712_ATAC+RNA/downstream_analysis/6.20_co_p2g_df_arrange.csv&quot;)
+co_GO &lt;- bitr(unique(co_p2g_df_arrange$geneName[1:186]), fromType = &quot;SYMBOL&quot;,toType = c( &quot;ENTREZID&quot;),OrgDb=&quot;org.Hs.eg.db&quot;)
+GO_df &lt;- enrichGO(co_GO$ENTREZID,OrgDb = org.Hs.eg.db,ont = &quot;all&quot;,pAdjustMethod = &quot;none&quot;, pvalueCutoff = 0.05,readable =T)
+-log(p.adjust)
+dotplot(GO_df, showCategory = 15)+scale_color_gradient(low = &#39;#008B8B&#39;, high =&#39;#FFF8DC&#39; )
+GO_data &lt;- GO_df@result[1:15,]
+
+ggplot(GO_data,aes(x = Count, y =reorder(Description,Count)))+ 
+  geom_point(aes(size=Count,color=-log10(p.adjust)))+
+  scale_colour_gradient(low=&#39;#FFF8DC&#39;,high=&#39;#008B8B&#39;)+
+  labs(color=expression(-log10(p.adjust)),
+    size=&quot; Count Number&quot;,x=&quot;Gene Count&quot;)+theme_bw()+
+  theme(axis.text.y = element_text(size = rel(1.5)),
+    axis.title.x = element_text(size=rel(1.5)),
+    axis.title.y = element_blank()
+  )+ scale_size(range=c(5, 10))
+
+##散点图 number of enhance 和correlation
+mc &lt;- tapply(co_p2g_df_filter$Correlation,co_p2g_df_filter$geneName, median)
+np &lt;- as.data.frame(table(co_p2g_df_filter$geneName))
+np$Correlation &lt;- mc
+mean(np$Correlation)
+#[1] 0.6709494
+np1 &lt;- np[np$Correlation&gt;0.8,]
+np2 &lt;- np1[np1$Freq&gt;10,]
+np2$group &lt;- &quot;sig&quot;
+np2$gene &lt;- np2$Var1
+np_g &lt;- merge(np,np2,all.x = TRUE)
+np_g[is.na(np_g)] &lt;-  &quot;non_sig&quot;
+
+
+ggplot(np_g, aes(x = Freq, y = Correlation)) +geom_point(aes(colour = group,))+
+       scale_color_manual(values=c(&quot;non_sig&quot; = &quot;#80B1D3&quot;,&quot;sig&quot; = &quot;#FB8072&quot;))+
+       geom_vline(xintercept=10,lty=2,col=&quot;black&quot;,lwd=1) +
+       theme(legend.background=element_blank(), legend.key=element_blank(),
+                         legend.title = element_blank(),
+                         panel.grid.major = element_blank(),panel.grid.minor = element_blank())+theme_bw()+
+       ggrepel::geom_text_repel(
+             aes(label=gene,color=group),np_g,
+             size = 4, #注释文本的字体大小
+             box.padding = 0.5, #字到点的距离
+             point.padding = 0.8, #字到点的距离，点周围的空白宽度
+             min.segment.length = 0.5, #短线段可以省略
+             segment.color = &quot;black&quot;, #显示线段
+            show.legend = F)
+top_gene &lt;- c(&quot;PID1&quot;,&quot;VCAN&quot;,&quot;IL1B&quot;,&quot;IL1A&quot;,&quot;RBM47&quot;,&quot;FCAR&quot;,&quot;TLR2&quot;,&quot;CLEC7A&quot;,&quot;SLC8A1&quot;)
+p &lt;- plotBrowserTrack(ArchRProj = archrproj, groupBy = &quot;celltype&quot;, geneSymbol = top_gene, upstream = 50000,downstream = 50000,
+  loops = getPeak2GeneLinks(archrproj))
+grid::grid.draw(p$IL1B)
+
+p_p &lt;- plotBrowserTrack(ArchRProj = archrproj, groupBy = &quot;Participants&quot;, geneSymbol = top_gene, upstream = 50000,downstream = 50000,
+                        loops = getPeak2GeneLinks(archrproj))
+
+grid::grid.draw(p_p$IL1B)</code></pre>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span>
+Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.3.2 (2023-10-31 ucrt)
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+Running under: Windows 10 x64 (build 19045)
+
+Matrix products: default
+
+
+locale:
+[1] LC_COLLATE=Chinese (Simplified)_China.utf8 
+[2] LC_CTYPE=Chinese (Simplified)_China.utf8   
+[3] LC_MONETARY=Chinese (Simplified)_China.utf8
+[4] LC_NUMERIC=C                               
+[5] LC_TIME=Chinese (Simplified)_China.utf8    
+
+time zone: Asia/Shanghai
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] workflowr_1.7.1
+
+loaded via a namespace (and not attached):
+ [1] vctrs_0.6.5       httr_1.4.7        cli_3.6.2         knitr_1.45       
+ [5] rlang_1.1.2       xfun_0.41         stringi_1.8.3     processx_3.8.3   
+ [9] png_0.1-8         promises_1.2.1    jsonlite_1.8.8    glue_1.6.2       
+[13] rprojroot_2.0.4   git2r_0.33.0      htmltools_0.5.7   httpuv_1.6.13    
+[17] ps_1.7.5          sass_0.4.8        rmarkdown_2.25    grid_4.3.2       
+[21] jquerylib_0.1.4   evaluate_0.23     fastmap_1.1.1     yaml_2.3.8       
+[25] lifecycle_1.0.4   whisker_0.4.1     stringr_1.5.1     compiler_4.3.2   
+[29] fs_1.6.3          Rcpp_1.0.11       rstudioapi_0.15.0 later_1.3.2      
+[33] lattice_0.21-9    digest_0.6.33     R6_2.5.1          reticulate_1.34.0
+[37] callr_3.7.3       magrittr_2.0.3    Matrix_1.6-1.1    bslib_0.6.1      
+[41] tools_4.3.2       cachem_1.0.8      getPass_0.2-4    </code></pre>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+https://docs.mathjax.org/en/latest/web/configuration.html. This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

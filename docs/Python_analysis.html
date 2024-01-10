@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="wangrong" />
+
+
+<title>Python analysis</title>
+
+<script src="site_libs/header-attrs-2.25/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-6.4.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet" />
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/main/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Single-cell multiomics_SARS-CoV-2 inactivated vaccine_analysis</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="R_analysis.html">R analysis</a>
+</li>
+<li>
+  <a href="python_analysis.html">python analysis</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/WangRong423/scMultiomics_SARS-CoV-2_vaccine_analysis">
+    <span class="fab fa-github"></span>
+     
+    Source code
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Python analysis</h1>
+<h4 class="author">wangrong</h4>
+<h4 class="date">2024/1/10</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+workflowr <span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+</a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2024-01-10
+</p>
+<p>
+<strong>Checks:</strong> <span
+class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7
+<span class="glyphicon glyphicon-exclamation-sign text-danger"
+aria-hidden="true"></span> 0
+</p>
+<p>
+<strong>Knit directory:</strong>
+<code>scMultiomics_SARS-CoV-2_vaccine_analysis/</code> <span
+class="glyphicon glyphicon-question-sign" aria-hidden="true"
+title="This is the local directory in which the code in this file was executed.">
+</span>
+</p>
+<p>
+This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a>
+analysis was created with <a
+  href="https://github.com/workflowr/workflowr">workflowr</a> (version
+1.7.1). The <em>Checks</em> tab describes the reproducibility checks
+that were applied when the results were created. The <em>Past
+versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date
+</a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguptodate"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great! Since the R Markdown file has been committed to the Git
+repository, you know the exact version of the code that produced these
+results.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the
+global environment can affect the analysis in your R Markdown file in
+unknown ways. For reproduciblity it’s best to always run the code in an
+empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20240110code">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Seed:</strong>
+<code>set.seed(20240110)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20240110code"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20240110)</code> was run prior to running
+the code in the R Markdown file. Setting a seed ensures that any results
+that rely on randomness, e.g. subsampling or permutations, are
+reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Session information:</strong>
+recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package
+versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be
+confident that you successfully produced the results during this
+run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr
+project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrong72e7d4f">
+<span class="glyphicon glyphicon-ok text-success"
+aria-hidden="true"></span> <strong>Repository version:</strong> 72e7d4f
+</a>
+</p>
+</div>
+<div id="strongRepositoryversionstrong72e7d4f"
+class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development
+and connecting the code version to the results is critical for
+reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version 72e7d4f.
+See the <em>Past versions</em> tab to see a history of the changes made
+to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for
+the analysis have been committed to Git prior to generating the results
+(you can use <code>wflow_publish</code> or
+<code>wflow_git_commit</code>). workflowr only checks the R Markdown
+file, but you know if there are other scripts or data files that it
+depends on. Below is the status of the Git repository when the results
+were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    Downloads/
+
+Unstaged changes:
+    Modified:   analysis/_site.yml
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not
+included in this status report because it is ok for generated content to
+have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+
+<p>
+These are the previous versions of the repository in which changes were
+made to the R Markdown (<code>analysis/Python_analysis.Rmd</code>) and
+HTML (<code>docs/Python_analysis.html</code>) files. If you’ve
+configured a remote Git repository (see <code>?wflow_git_remote</code>),
+click on the hyperlinks in the table below to view the files as they
+were in that past version.
+</p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+72e7d4f
+</td>
+<td>
+WangRong423
+</td>
+<td>
+2024-01-10
+</td>
+<td>
+Publish the initial files for myproject
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div id="egrn-analysis" class="section level2">
+<h2>eGRN analysis</h2>
+<p>We followed the SCENIC+ workflow. the gene expression matrix after
+quality control was directly used for the transcriptome. We preprocessed
+the snATAC-seq part of the multiome dataset using pycisTopic.</p>
+<pre class="python"><code>import pandas as pd
+cell_data=pd.read_csv(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/rna_metadata/2.16.metadata.csv&#39;, na_values=&#39;NAN&#39;,infer_datetime_format=True,index_col=&quot;idbarcode&quot;)
+cell_data[&#39;celltype&#39;] = cell_data[&#39;celltype&#39;].astype(str)
+cell_data
+print(cell_data[&quot;celltype&quot;].value_counts())
+
+import os
+import pycisTopic
+%matplotlib inline
+
+work_dir = &#39;/database/huangdingli/0712_ATAC+RNA/&#39;
+fragments_dict = {&#39;M1-1&#39;: os.path.join(work_dir, &#39;M1-1/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M1-2&#39;: os.path.join(work_dir, &#39;M1-2/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M1-3&#39;: os.path.join(work_dir, &#39;M1-3/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M1-4&#39;: os.path.join(work_dir, &#39;M1-4/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M1-5&#39;: os.path.join(work_dir, &#39;M1-5/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M1-6&#39;: os.path.join(work_dir, &#39;M1-6/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M1-7&#39;: os.path.join(work_dir, &#39;M1-7/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M1-8&#39;: os.path.join(work_dir, &#39;M1-8/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M1-9&#39;: os.path.join(work_dir, &#39;M1-9/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M1-10&#39;: os.path.join(work_dir, &#39;M1-10/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M2-1&#39;: os.path.join(work_dir, &#39;M2-1/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M2-4&#39;: os.path.join(work_dir, &#39;M2-4/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M2-5&#39;: os.path.join(work_dir, &#39;M2-5/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M2-6&#39;: os.path.join(work_dir, &#39;M2-6/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M2-7&#39;: os.path.join(work_dir, &#39;M2-7/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M2-8&#39;: os.path.join(work_dir, &#39;M2-8/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M2-9&#39;: os.path.join(work_dir, &#39;M2-9/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M2-10&#39;: os.path.join(work_dir, &#39;M2-10/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M3-1&#39;: os.path.join(work_dir, &#39;M3-1/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M3-2&#39;: os.path.join(work_dir, &#39;M3-2/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M3-3&#39;: os.path.join(work_dir, &#39;M3-3/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M3-4&#39;: os.path.join(work_dir, &#39;M3-4/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M3-5&#39;: os.path.join(work_dir, &#39;M3-5/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M3-6&#39;: os.path.join(work_dir, &#39;M3-6/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M3-7&#39;: os.path.join(work_dir, &#39;M3-7/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M3-8&#39;: os.path.join(work_dir, &#39;M3-8/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M3-9&#39;: os.path.join(work_dir, &#39;M3-9/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M3-10&#39;: os.path.join(work_dir, &#39;M3-10/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M5-1&#39;: os.path.join(work_dir, &#39;M5-1/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M5-2&#39;: os.path.join(work_dir, &#39;M5-2/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M5-3&#39;: os.path.join(work_dir, &#39;M5-3/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M5-4&#39;: os.path.join(work_dir, &#39;M5-4/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M5-5&#39;: os.path.join(work_dir, &#39;M5-5/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M5-6&#39;: os.path.join(work_dir, &#39;M5-6/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M5-7&#39;: os.path.join(work_dir, &#39;M5-7/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M5-8&#39;: os.path.join(work_dir, &#39;M5-8/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M5-9&#39;: os.path.join(work_dir, &#39;M5-9/outs/atac_fragments.tsv.gz&#39;),
+                  &#39;M5-10&#39;: os.path.join(work_dir, &#39;M5-10/outs/atac_fragments.tsv.gz&#39;)}
+
+
+import pyranges as pr
+import requests
+import pandas as pd
+
+target_url=&#39;http://hgdownload.cse.ucsc.edu/goldenPath/hg38/bigZips/hg38.chrom.sizes&#39;
+chromsizes=pd.read_csv(target_url, sep=&#39;\t&#39;, header=None)
+chromsizes.columns=[&#39;Chromosome&#39;, &#39;End&#39;]
+chromsizes[&#39;Start&#39;]=[0]*chromsizes.shape[0]
+chromsizes=chromsizes.loc[:,[&#39;Chromosome&#39;, &#39;Start&#39;, &#39;End&#39;]]
+# Exceptionally in this case, to agree with CellRangerARC annotations
+chromsizes[&#39;Chromosome&#39;] = [chromsizes[&#39;Chromosome&#39;][x].replace(&#39;v&#39;, &#39;.&#39;) for x in range(len(chromsizes[&#39;Chromosome&#39;]))]
+chromsizes[&#39;Chromosome&#39;] = [chromsizes[&#39;Chromosome&#39;][x].split(&#39;_&#39;)[1] if len(chromsizes[&#39;Chromosome&#39;][x].split(&#39;_&#39;)) &gt; 1 else chromsizes[&#39;Chromosome&#39;][x] for x in range(len(chromsizes[&#39;Chromosome&#39;]))]
+chromsizes=pr.PyRanges(chromsizes)
+
+import ray
+ray.shutdown()
+ray.init(_temp_dir = &#39;/DATA1/wangrong/temp/ray_spill/&#39;)
+
+from pycisTopic.pseudobulk_peak_calling import export_pseudobulk
+bw_paths, bed_paths = export_pseudobulk(input_data = cell_data,
+                 variable = &#39;celltype&#39;,
+                 sample_id_col = &#39;sample_id&#39;,             
+                 chromsizes = chromsizes,
+                 bed_path = &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/38_pseudobulk_bed_files/&#39;,
+                 bigwig_path = &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/38_pseudobulk_bw_files/&#39;,
+                 path_to_fragments = fragments_dict,
+                 n_cpu = 64,  
+                 normalize_bigwig = True,
+                 remove_duplicates = True,
+                 _temp_dir = &#39;/DATA1/wangrong/temp/ray_spill/&#39;,
+                 split_pattern = &#39;___&#39;,
+                 ignore_reinit_error = True)           
+
+import pickle
+
+with open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/38_pseudobulk_bed_files/bed_paths.pkl&#39;, &#39;wb&#39;) as f:
+  pickle.dump(bed_paths, f)
+with open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/38_pseudobulk_bed_files/bw_paths.pkl&#39;, &#39;wb&#39;) as f:
+  pickle.dump(bw_paths, f)
+  
+bed_paths = pickle.load(open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/38_pseudobulk_bed_files/bed_paths.pkl&#39;, &#39;rb&#39;))
+bw_paths =  pickle.load(open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/38_pseudobulk_bed_files/bw_paths.pkl&#39;, &#39;rb&#39;))
+
+from pycisTopic.pseudobulk_peak_calling import peak_calling
+macs_path = &#39;macs2&#39;
+# Run peak calling
+narrow_peaks_dict = peak_calling(macs_path,
+                                 bed_paths,
+                                 os.path.join(&#39;/database/huhuajie/Results/scATAC/consensus_peak_calling/MACS/&#39;),
+                                 genome_size=&#39;hs&#39;,
+                                 n_cpu=64,
+                                 input_format=&#39;BEDPE&#39;,
+                                 shift=73,
+                                 ext_size=146,
+                                 keep_dup = &#39;all&#39;,
+                                 q_value = 0.05,
+                                 _temp_dir = &#39;/DATA1/wangrong/temp/ray_spill/&#39;,
+                                 ignore_reinit_error = True)
+
+with open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/MACS/narrow_peaks_dict.pkl&#39;, &#39;wb&#39;) as f:
+  pickle.dump(narrow_peaks_dict, f)
+  
+  
+import pickle
+narrow_peaks_dict =  pickle.load(open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/MACS/narrow_peaks_dict.pkl&#39;, &#39;rb&#39;))
+
+from pycisTopic.iterative_peak_calling import *
+# Other param
+peak_half_width = 250
+path_to_blacklist = &#39;/jupyter/huhuajie/Data/blacklist/hg38-blacklist.v2.bed&#39;
+# Get consensus peaks
+consensus_peaks = get_consensus_peaks(narrow_peaks_dict, peak_half_width, chromsizes=chromsizes, path_to_blacklist=path_to_blacklist)
+
+# Write to bed
+consensus_peaks.to_bed(
+    path = &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+    keep=True,
+    compression=&#39;infer&#39;,
+    chain=False)
+
+import pybiomart as pbm
+
+dataset = pbm.Dataset(name=&#39;hsapiens_gene_ensembl&#39;,  host=&#39;http://www.ensembl.org&#39;)
+annot = dataset.query(attributes=[&#39;chromosome_name&#39;, &#39;transcription_start_site&#39;, &#39;strand&#39;, &#39;external_gene_name&#39;, &#39;transcript_biotype&#39;])
+annot[&#39;Chromosome/scaffold name&#39;] = annot[&#39;Chromosome/scaffold name&#39;].to_numpy(dtype = str)
+filter = annot[&#39;Chromosome/scaffold name&#39;].str.contains(&#39;CHR|GL|JH|MT&#39;)
+annot = annot[~filter]
+annot[&#39;Chromosome/scaffold name&#39;] = annot[&#39;Chromosome/scaffold name&#39;].str.replace(r&#39;(\b\S)&#39;, r&#39;chr\1&#39;)
+annot.columns=[&#39;Chromosome&#39;, &#39;Start&#39;, &#39;Strand&#39;, &#39;Gene&#39;, &#39;Transcript_type&#39;]
+annot = annot[annot.Transcript_type == &#39;protein_coding&#39;]
+
+#import ray
+#ray.shutdown()
+#ray.init(_temp_dir = &#39;/database/temp/ray_spill/&#39;)
+
+from pycisTopic.qc import *
+## Set regions. We will use the consensus peaks we have just called, but we could also use the bulk peaks per sample instead for this step
+path_to_regions= {&#39;M1-1&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M1-2&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M1-3&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M1-4&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M1-5&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M1-6&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M1-7&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M1-8&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M1-9&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M1-10&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M2-1&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M2-4&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M2-5&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M2-6&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M2-7&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M2-8&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M2-9&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M2-10&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M3-1&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M3-2&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M3-3&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M3-4&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M3-5&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M3-6&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M3-7&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M3-8&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M3-9&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M3-10&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M5-1&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M5-2&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M5-3&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M5-4&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M5-5&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M5-6&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M5-7&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M5-8&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M5-9&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;,
+                  &#39;M5-10&#39;: &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/consensus_peak_calling/consensus_regions.bed&#39;}
+metadata_bc, profile_data_dict = compute_qc_stats(
+                fragments_dict = fragments_dict,
+                tss_annotation = annot,
+                stats=[&#39;barcode_rank_plot&#39;, &#39;duplicate_rate&#39;, &#39;insert_size_distribution&#39;, &#39;profile_tss&#39;, &#39;frip&#39;],
+                label_list = None,
+                path_to_regions = path_to_regions,
+                n_cpu = 4,
+                valid_bc = None,
+                n_frag = 100,
+                n_bc = None,
+                tss_flank_window = 1000,
+                tss_window = 50,
+                tss_minimum_signal_window = 100,
+                tss_rolling_window = 10,
+                remove_duplicates = True,
+                _temp_dir = &#39;/DATA1/wangrong/temp/ray_spill/&#39;,
+                ignore_reinit_error = True)
+
+if not os.path.exists(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control&#39;):
+    os.makedirs(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control&#39;)
+
+pickle.dump(metadata_bc,
+            open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control/38_metadata_bc.pkl&#39;, &#39;wb&#39;))
+pickle.dump(profile_data_dict,
+            open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control/38_profile_data_dict.pkl&#39;, &#39;wb&#39;))
+            
+from pycisTopic.qc import *
+plot_sample_metrics(profile_data_dict,
+           insert_size_distribution_xlim=[0,600],
+           ncol=5,
+           plot=True,
+           save= &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control/sample_metrics.pdf&#39;,
+           duplicate_rate_as_hexbin = True)
+
+
+FRIP_NR_FRAG_fig = {}
+FRIP_NR_FRAG_filter = {}
+TSS_NR_FRAG_fig = {}
+TSS_NR_FRAG_filter = {}
+DR_NR_FRAG_fig = {}
+
+QC_filters = {
+    &#39;Log_unique_nr_frag&#39;: [3.3 , None],
+    &#39;FRIP&#39;:               [0.45, None],
+    &#39;TSS_enrichment&#39;:     [5   , None],
+    &#39;Dupl_rate&#39;:          [None, None]
+}
+
+for sample in metadata_bc.keys():
+    FRIP_NR_FRAG_fig[sample], FRIP_NR_FRAG_filter[sample]=plot_barcode_metrics(metadata_bc[sample],
+                                           var_x=&#39;Log_unique_nr_frag&#39;,
+                                           var_y=&#39;FRIP&#39;,
+                                           min_x=QC_filters[&#39;Log_unique_nr_frag&#39;][0],
+                                           max_x=QC_filters[&#39;Log_unique_nr_frag&#39;][1],
+                                           min_y=QC_filters[&#39;FRIP&#39;][0],
+                                           max_y=QC_filters[&#39;FRIP&#39;][1],
+                                           return_cells=True,
+                                           return_fig=True,
+                                           plot=False,
+                                           save= &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control/barcode_metrics_FRIP-VS-NRFRAG_&#39;+sample+&#39;.pdf&#39;)
+    # Return figure to plot together with other metrics, and cells passing filters
+    TSS_NR_FRAG_fig[sample], TSS_NR_FRAG_filter[sample]=plot_barcode_metrics(metadata_bc[sample],
+                                          var_x=&#39;Log_unique_nr_frag&#39;,
+                                          var_y=&#39;TSS_enrichment&#39;,
+                                          min_x=QC_filters[&#39;Log_unique_nr_frag&#39;][0],
+                                          max_x=QC_filters[&#39;Log_unique_nr_frag&#39;][1],
+                                          min_y=QC_filters[&#39;TSS_enrichment&#39;][0],
+                                          max_y=QC_filters[&#39;TSS_enrichment&#39;][1],
+                                          return_cells=True,
+                                          return_fig=True,
+                                          plot=False,
+                                          save= &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control/barcode_metrics_TSS-VS-NRFRAG_&#39;+sample+&#39;.pdf&#39;)
+    # Return figure to plot together with other metrics, but not returning cells (no filter applied for the duplication rate  per barcode)
+    DR_NR_FRAG_fig[sample]=plot_barcode_metrics(metadata_bc[sample],
+                                          var_x=&#39;Log_unique_nr_frag&#39;,
+                                          var_y=&#39;Dupl_rate&#39;,
+                                          min_x=QC_filters[&#39;Log_unique_nr_frag&#39;][0],
+                                          max_x=QC_filters[&#39;Log_unique_nr_frag&#39;][1],
+                                          min_y=QC_filters[&#39;Dupl_rate&#39;][0],
+                                          max_y=QC_filters[&#39;Dupl_rate&#39;][1],
+                                          return_cells=False,
+                                          return_fig=True,
+                                          plot=False,
+                                          plot_as_hexbin = True)
+
+
+
+# Plot barcode stats in one figure
+fig=plt.figure(figsize=(40, 30))
+i=1
+for sample in FRIP_NR_FRAG_fig.keys():
+    plt.subplot(38, 3, i)
+    plt.gca().set_title(sample, fontsize=20)
+    i += 1
+    img = fig2img(FRIP_NR_FRAG_fig[sample]) #To convert figures to png to plot together, see .utils.py. This converts the figure to png.
+    plt.imshow(img)
+    plt.axis(&#39;off&#39;)
+    plt.subplot(38, 3, i)
+    plt.gca().set_title(sample, fontsize=20)
+    i += 1
+    img = fig2img(TSS_NR_FRAG_fig[sample])
+    plt.imshow(img)
+    plt.axis(&#39;off&#39;)
+    plt.subplot(38, 3, i)
+    plt.gca().set_title(sample, fontsize=20)
+    i += 1
+    img = fig2img(DR_NR_FRAG_fig[sample])
+    plt.imshow(img)
+    plt.axis(&#39;off&#39;)
+plt.savefig(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control/combined_qc.pdf&#39;)
+
+import pickle
+
+bc_passing_filters = {}
+for sample in FRIP_NR_FRAG_filter.keys():
+    bc_passing_filters[sample] = list((set(FRIP_NR_FRAG_filter[sample]) &amp; set(TSS_NR_FRAG_filter[sample])))
+    
+pickle.dump(bc_passing_filters,
+            open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control/bc_passing_filters.pkl&#39;, &#39;wb&#39;))
+            
+            import pickle
+infile = open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/quality_control/38_metadata_bc.pkl&#39;, &#39;rb&#39;)
+metadata_bc = pickle.load(infile)
+infile.close()
+
+print(metadata_bc.keys())
+metadata_bc
+
+#cell_data[&#39;sample_id&#39;] = [x.split(&#39;_&#39;)[0] for x in cell_data.index.tolist()]  # 增加sample_id列，标记样本
+# cell_data[&#39;barcode&#39;] = [x.split(&#39;_&#39;)[1] for x in cell_data.index.tolist()]    # 增加barcode列，此处barcode要与fragments文件中barcode一致
+cell_data=pd.read_csv(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/rna_metadata/2.16.metadata.csv&#39;, na_values=&#39;NAN&#39;,infer_datetime_format=True,index_col=&quot;idbarcode&quot;)
+cell_data[&#39;celltype&#39;] = cell_data[&#39;celltype&#39;].astype(str)
+
+import pickle
+import os
+
+work_dir = &#39;/database/huangdingli/0712_ATAC+RNA/&#39;
+path_to_blacklist= &#39;/jupyter/huhuajie/Data/blacklist/hg38-blacklist.v2.bed&#39;
+
+from pycisTopic.cistopic_class import *
+cistopic_obj_list=[create_cistopic_object_from_fragments(
+                                                         path_to_fragments=fragments_dict[key],
+                                                         path_to_regions=path_to_regions[key],
+                                                         path_to_blacklist=path_to_blacklist,
+                                                         metrics=metadata_bc[key],
+                                                         valid_bc=bc_passing_filters[key],
+                                                         n_cpu=32,
+                                                         project=key,
+                                                         split_pattern=&#39;_&#39;) for key in fragments_dict.keys()]
+cistopic_obj = merge(cistopic_obj_list)
+cistopic_obj.add_cell_data(cell_data)
+print(cistopic_obj)
+import pickle
+pickle.dump(cistopic_obj,
+            open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/2.18.cistopic_obj.pkl&#39;, &#39;wb&#39;))
+            
+import pickle
+cistopic_obj = pickle.load(open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/2.18.cistopic_obj.pkl&#39;, &#39;rb&#39;))
+
+metadf=cistopic_obj.cell_data
+cleandf=metadf[metadf[&quot;id&quot;].notna()]
+cleandf
+cellname=cleandf[&#39;idbarcode.1&#39;].values.tolist()
+cistopic_obj_sub = cistopic_obj.subset(cells=cellname,copy=True)
+
+print(cistopic_obj_sub)
+cistopic_obj_sub.cell_data[&#39;sample_id&#39;]
+
+sub_df= cistopic_obj_sub.cell_data
+cistopic_obj_sub.add_cell_data(sub_df)
+cistopic_obj_sub
+cistopic_obj_sub.projections[&#39;cell&#39;]
+
+pickle.dump(cistopic_obj_sub,
+            open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/2.24.sub_cistopic_obj.pkl&#39;, &#39;wb&#39;))
+            
+# sampling
+cistopic_obj_sub = pickle.load(open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/2.24.sub_cistopic_obj_harmony.pkl&#39;, &#39;rb&#39;))
+sub_metadf=cistopic_obj_sub.cell_data
+seed=[&quot;1&quot;,&quot;2&quot;,&quot;3&quot;,&quot;4&quot;,&quot;5&quot;,&quot;6&quot;]*38747
+sub_metadf=cistopic_obj_sub.cell_data
+import pandas as pd
+s = pd.Series(seed)
+s1 = pd.Series(seed,index=sub_metadf.index)
+sub_metadf[&quot;sampling&quot;]=s1
+sampling_df=sub_metadf[sub_metadf[&quot;sampling&quot;]==&#39;1&#39;]
+cellname=sampling_df[&#39;idbarcode.1&#39;].values.tolist()
+cistopic_obj_sampling = cistopic_obj_sub.subset(cells=cellname,copy=True)
+cistopic_obj_sampling.cell_data[&#39;sample_id&#39;]
+
+sub_df= cistopic_obj_sampling.cell_data
+cistopic_obj_sampling.add_cell_data(sub_df)
+cistopic_obj_sampling
+cistopic_obj_sampling.projections[&#39;cell&#39;]
+pickle.dump(cistopic_obj_sampling,
+            open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/3.23.cistopic_obj_sampling.pkl&#39;, &#39;wb&#39;))
+            
+# Load models
+models = pickle.load(open(&#39;/DATA1/zhang_lab/tmp/model/3.23.muliti_model_sampling.pkl&#39;, &#39;rb&#39;))
+from pycisTopic.lda_models import *
+model=evaluate_models(models,
+                     select_model=16,
+                     return_model=True,
+                     metrics=[&#39;Arun_2010&#39;,&#39;Cao_Juan_2009&#39;, &#39;Minmo_2011&#39;, &#39;loglikelihood&#39;],
+                     plot_metrics=False,
+                     save= &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/models/3.23.model_selection.pdf&#39;)
+cistopic_obj_sampling.add_LDA_model(model)                   
+
+# Harmony
+harmony(cistopic_obj_sampling, &#39;sample_id&#39;, random_state=555)
+# UMAP
+run_umap(cistopic_obj_sampling, reduction_name=&#39;harmony_UMAP&#39;,
+                 target  = &#39;cell&#39;, harmony=True)
+pickle.dump(cistopic_obj_sampling,
+            open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/3.23.cistopic_obj_sampling_harmony.pkl&#39;, &#39;wb&#39;))</code></pre>
+<p>In the second step, motif enrichment was performed using both the
+cisTarget and DEM algorithm on cell-type-based DARs. Due to the large
+number of cells and the heavy computational burden, 1/6 of the cells
+(38748) were sampled.</p>
+<pre class="python"><code>from pycisTopic.topic_binarization import *
+region_bin_topics_otsu = binarize_topics(cistopic_obj_sampling, method=&#39;otsu&#39;, plot=True, num_columns=5, save= &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/3.11.otsu.pdf&#39;)
+region_bin_topics_top3k = binarize_topics(cistopic_obj_sampling, method=&#39;ntop&#39;, ntop = 3000,plot=True, num_columns=5, save= &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/3.11.ntop.pdf&#39;)
+
+from pycisTopic.diff_features import *
+imputed_acc_obj = impute_accessibility(cistopic_obj_sampling, selected_cells=None, selected_regions=None, scale_factor=10**6)
+normalized_imputed_acc_obj = normalize_scores(imputed_acc_obj, scale_factor=10**4)
+variable_regions = find_highly_variable_features(normalized_imputed_acc_obj, plot = False)
+markers_dict = find_diff_features(cistopic_obj_sampling, imputed_acc_obj, variable=&#39;celltype&#39;, var_features=variable_regions, split_pattern = &#39;-&#39;)
+
+rankings_db = &#39;/database/wangrong/Reference/feather_database/hg38_screen_v10_clust.regions_vs_motifs.rankings.feather&#39;
+scores_db =  &#39;/database/wangrong/Reference/feather_database/hg38_screen_v10_clust.regions_vs_motifs.scores.feather&#39;
+motif_annotation = &#39;/database/wangrong/Reference/feather_database/anno/motifs-v10nr_clust-nr.hgnc-m0.001-o0.0.tbl&#39;
+
+import pyranges as pr
+from pycistarget.utils import region_names_to_coordinates
+region_sets = {}
+region_sets[&#39;topics_otsu&#39;] = {}
+region_sets[&#39;topics_top_3&#39;] = {}
+region_sets[&#39;DARs&#39;] = {}
+for topic in region_bin_topics_otsu.keys():
+    regions = region_bin_topics_otsu[topic].index[region_bin_topics_otsu[topic].index.str.startswith(&#39;chr&#39;)] #only keep regions on known chromosomes
+    region_sets[&#39;topics_otsu&#39;][topic] = pr.PyRanges(region_names_to_coordinates(regions))
+for topic in region_bin_topics_top3k.keys():
+    regions = region_bin_topics_top3k[topic].index[region_bin_topics_top3k[topic].index.str.startswith(&#39;chr&#39;)] #only keep regions on known chromosomes
+    region_sets[&#39;topics_top_3&#39;][topic] = pr.PyRanges(region_names_to_coordinates(regions))
+for DAR in markers_dict.keys():
+    regions = markers_dict[DAR].index[markers_dict[DAR].index.str.startswith(&#39;chr&#39;)] #only keep regions on known chromosomes
+    region_sets[&#39;DARs&#39;][DAR] = pr.PyRanges(region_names_to_coordinates(regions))
+    
+    
+region_sets[&#39;DARs&#39;][&#39;NK_NKT&#39;] = region_sets[&#39;DARs&#39;].pop(&#39;NK/NKT&#39;)
+region_sets[&#39;DARs&#39;][&#39;Plasmablasts_Memory B&#39;] = region_sets[&#39;DARs&#39;].pop(&#39;Plasmablasts/Memory B&#39;)
+region_sets[&#39;DARs&#39;].keys()
+
+from scenicplus.wrappers.run_pycistarget import run_pycistarget
+run_pycistarget(
+    region_sets = region_sets,
+    species = &#39;homo_sapiens&#39;,
+    save_path = os.path.join(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/motifs/new_sampling/&#39;),
+    ctx_db_path = rankings_db,
+    dem_db_path = scores_db,
+    path_to_motif_annotations = motif_annotation,
+    run_without_promoters = True,
+    n_cpu = 8,
+    _temp_dir = &#39;/DATA1/zhang_lab/tmp/&#39;,
+    annotation_version = &#39;v10nr_clust&#39;)
+    
+import pickle
+import dill
+import scanpy as sc
+import os
+import warnings
+warnings.filterwarnings(&quot;ignore&quot;)
+import pandas
+import pyranges
+# Set stderr to null to avoid strange messages from ray
+import sys
+_stderr = sys.stderr
+null = open(os.devnull,&#39;wb&#39;)
+menr = dill.load(open( &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/motifs/new_sampling/menr.pkl&#39;, &#39;rb&#39;))
+adata = sc.read_h5ad( &#39;/database/wangrong/Results/0712_ATAC+RNA/HIPPO/lightHIPPO/RNA.h5ad&#39;)
+cistopic_obj_sampling=pickle.load(open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/3.24.cistopic_obj_sampling_harmony.pkl&#39;, &#39;rb&#39;))
+
+adata.obs[&#39;barcode&#39;] = [x.split(&#39;_&#39;)[1] for x in adata.obs.index.tolist()]
+adata.obs.index = adata.obs[&#39;barcode&#39;] + &#39;_&#39; + adata.obs[&#39;orig.ident&#39;]+ &#39;___&#39; + adata.obs[&#39;orig.ident&#39;]
+adata.obs
+
+adata_sampling = adata[adata.obs.index.isin(cellname)]
+adata_sampling
+
+adata_sampling.raw = adata_sampling
+sc.pp.normalize_total(adata_sampling, target_sum=1e4)
+sc.pp.log1p(adata_sampling)
+sc.pp.highly_variable_genes(adata_sampling, min_mean=0.0125, max_mean=3, min_disp=0.5)
+adata_sampling = adata_sampling[:, adata_sampling.var.highly_variable]
+sc.pp.scale(adata_sampling, max_value=10)
+sc.tl.pca(adata_sampling, svd_solver=&#39;arpack&#39;)
+
+sc.pp.neighbors(adata_sampling, n_neighbors=10, n_pcs=40)
+sc.tl.umap(adata_sampling)
+sc.tl.leiden(adata_sampling)</code></pre>
+<p>Step three, a search space of a maximum between either the boundary
+of the closest gene or 150 kb and a minimum of 1 kb upstream of the TSS
+or downstream of the end of the gene was considered for calculating
+region–gene relationships using gradient-boosting machine
+regression.</p>
+<pre class="python"><code>from scenicplus.scenicplus_class import create_SCENICPLUS_object
+import numpy as np
+scplus_obj_sampling = create_SCENICPLUS_object(
+    GEX_anndata = adata_sampling.raw.to_adata(),
+    cisTopic_obj = cistopic_obj_sampling,
+    menr = menr)
+    
+scplus_obj_sampling.X_EXP = np.array(scplus_obj_sampling.X_EXP.todense())
+scplus_obj_sampling
+pickle.dump(scplus_obj_sampling, open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/3.24.scplus_obj_sampling.pkl&#39;, &#39;wb&#39;))
+
+del adata_sampling
+del cistopic_obj_sampling
+del adata
+del imputed_acc_obj
+del cistopic_obj_sub
+del models
+
+biomart_host = &quot;http://sep2019.archive.ensembl.org/&quot;
+
+from scenicplus.wrappers.run_scenicplus import run_scenicplus
+try:
+    run_scenicplus(
+        scplus_obj = scplus_obj_sampling,
+        variable = [&#39;GEX_celltype&#39;],
+        species = &#39;hsapiens&#39;,
+        assembly = &#39;hg38&#39;,
+        tf_file = &#39;/database/wangrong/Reference/utoronto_human_tfs_v_1.01.txt&#39;,
+        save_path = &#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/scenicplus/new_sampling/&#39;,
+        biomart_host = biomart_host,
+        upstream = [1000, 150000],
+        downstream = [1000, 150000],
+        calculate_TF_eGRN_correlation = True,
+        calculate_DEGs_DARs = True,
+        export_to_loom_file = True,
+        export_to_UCSC_file = True,
+        path_bedToBigBed = &#39;/database/wangrong/Reference&#39;,
+        n_cpu = 6,
+        _temp_dir = &#39;/database/temp/ray_spill/&#39;)
+except Exception as e:
+    #in case of failure, still save the object
+    dill.dump(scplus_obj_sampling, open(&#39;/database/wangrong/Results/0712_ATAC+RNA/SCENIC/scenicplus/sampling/3.24.run.scplus_obj_sampling.pkl&#39;, &#39;wb&#39;), protocol=-1)
+    raise(e)</code></pre>
+</div>
+<div
+id="estimate-the-switch-time-and-rate-parameters-of-gene-regulation-in-cd14-monocytes"
+class="section level2">
+<h2>Estimate the switch time and rate parameters of gene regulation in
+CD14+ monocytes</h2>
+<p>We used MultiVelo to fit counts of chromatin accessibility, unspliced
+mRNA and spliced mRNA in the whole population of CD14+ monocytes.</p>
+<pre class="bash"><code>echo &quot;******************************BEGIN******************************&quot;
+begin=$(date &quot;+%Y-%m-%d %H:%M:%S&quot;)
+echo &quot;The script starts at ${begin}.&quot;
+
+people=(3 5)
+timepoints=(1 2 3 4 5 6 7 8 9 10)
+
+for i in ${people[*]}
+    do
+        for j in ${timepoints[*]}
+            do
+                echo &quot;-------------------------SAMPLE${i}_${j} START-------------------------&quot;
+                starttime=$(date &quot;+%Y-%m-%d %H:%M:%S&quot;)
+                echo &quot;Starts at ${starttime}&quot;                
+                velocyto run10x -m  /home/wangrong/software/Repeat_rmsk.gtf \
+                                    /database/wangrong/Results/0712_ATAC+RNA/M${i}-${j} \
+                                    /home/wangrong/software/refdata-cellranger-arc-GRCh38-2020-A-2.0.0/genes/genes.gtf
+                finishtime=$(date &quot;+%Y-%m-%d %H:%M:%S&quot;)
+                echo &quot;Ends with ${finishtime}&quot;
+                echo &quot;--------------------------SAMPLE${i}_${j} END--------------------------&quot;
+            done
+    done
+
+doen=$(date &quot;+%Y-%m-%d %H:%M:%S&quot;)
+echo &quot;The script ends with ${doen}.&quot;
+echo &quot;*****************************FINISH******************************&quot;
+</code></pre>
+<pre class="python"><code>import numpy as np
+import pandas as pd
+import scanpy as sc
+import scvelo as scv
+import multivelo as mv
+import matplotlib.pyplot as plt
+import anndata as ad
+scv.settings.verbosity = 3
+scv.settings.presenter_view = True
+scv.set_figure_params(&#39;scvelo&#39;)
+pd.set_option(&#39;display.max_columns&#39;, 100)
+pd.set_option(&#39;display.max_rows&#39;, 200)
+np.set_printoptions(suppress=True)
+
+sample=[&quot;M2-1&quot;,&quot;M2-4&quot;,&quot;M2-5&quot;,&quot;M2-6&quot;,&quot;M2-7&quot;,&quot;M2-8&quot;,&quot;M2-9&quot;,&quot;M2-10&quot;,
+        &quot;M1-1&quot;,&quot;M1-2&quot;,&quot;M1-3&quot;,&quot;M1-4&quot;,&quot;M1-5&quot;,&quot;M1-6&quot;,&quot;M1-7&quot;,&quot;M1-8&quot;,&quot;M1-9&quot;,&quot;M1-10&quot;,
+         &quot;M3-1&quot;,&quot;M3-2&quot;,&quot;M3-3&quot;,&quot;M3-4&quot;,&quot;M3-5&quot;,&quot;M3-6&quot;,&quot;M3-7&quot;,&quot;M3-8&quot;,&quot;M3-9&quot;,&quot;M3-10&quot;,
+         &quot;M5-1&quot;,&quot;M5-2&quot;,&quot;M5-3&quot;,&quot;M5-4&quot;,&quot;M5-5&quot;,&quot;M5-6&quot;,&quot;M5-7&quot;,&quot;M5-8&quot;,&quot;M5-9&quot;,&quot;M5-10&quot;]
+adata_rna_list=[]
+adata_atac_list=[]
+
+for x in range(len(sample)):
+ target=sample[x]
+ print(target) 
+ atac_path = &#39;/database/wangrong/Results/0712_ATAC+RNA/&#39; + target + &#39;/outs/filtered_feature_bc_matrix&#39;
+ atac_annot_path = &#39;/database/wangrong/Results/0712_ATAC+RNA/&#39; + target + &#39;/outs/atac_peak_annotation.tsv&#39;
+ feature_linkage_path = &#39;/database/wangrong/Results/0712_ATAC+RNA/&#39; + target + &#39;/outs/analysis/feature_linkage/feature_linkage.bedpe&#39;
+ loom_path = &#39;/database/wangrong/Results/0712_ATAC+RNA/&#39; + target + &#39;/velocyto/&#39; + target + &#39;.loom&#39;
+ annot_path = &#39;/home/huangdingli/sample_metadata.csv&#39;
+
+
+ adata_rna = scv.read(loom_path, cache=True)
+ adata_rna.obs_names = [x.replace(&#39;:&#39;, &#39;_&#39;)[:-1] + &#39;-1&#39; for x in adata_rna.obs_names]  # 加上&#39;-1&#39;后缀
+ adata_rna.var_names_make_unique()
+ sc.pp.filter_cells(adata_rna, min_counts=1000)
+ sc.pp.filter_cells(adata_rna, max_counts=20000)
+
+ cell_annot = pd.read_csv(annot_path, sep=&#39;,&#39;, index_col=0)
+ cell_annot_1= cell_annot[cell_annot[&quot;orig.ident&quot;] == target]
+ shared_cells = pd.Index(np.intersect1d(adata_rna.obs_names, cell_annot_1.index))
+ adata_rna = adata_rna[shared_cells, ]
+ adata_rna
+ #print(cell_annot.head())
+ cell_annot_1.index
+ shared_cells
+
+ cell_annot_2 = cell_annot_1.loc[shared_cells]
+ adata_rna.obs[&#39;celltype&#39;] = cell_annot_2[&#39;celltype&#39;]
+ adata_rna.obs[&#39;orig.ident&#39;] = cell_annot_2[&#39;orig.ident&#39;]
+ adata_rna.obs[&#39;Timepoints&#39;] = cell_annot_2[&#39;Timepoints&#39;]
+ adata_rna.obs[&#39;Participants&#39;] = cell_annot_2[&#39;Participants&#39;]
+ adata_rna.obs[&#39;annotation&#39;] = cell_annot_2[&#39;annotation&#39;]
+ adata_rna
+
+ adata_atac = sc.read_10x_mtx(atac_path,
+                             var_names=&#39;gene_symbols&#39;,
+                             cache=True, gex_only=False)
+ adata_atac = adata_atac[:, adata_atac.var[&#39;feature_types&#39;] == &quot;Peaks&quot;]
+ adata_atac = mv.aggregate_peaks_10x(adata_atac,
+                                    atac_annot_path,
+                                    feature_linkage_path,
+                                    verbose=True)
+ adata_atac.obs_names = [target + &#39;_&#39; + x  for x in adata_atac.obs_names] 
+ plt.hist(adata_atac.X.sum(1), bins=100, range=(0, 40000))
+ plt.show()
+ sc.pp.filter_cells(adata_atac, min_counts=1500)
+ sc.pp.filter_cells(adata_atac, max_counts=25000)
+
+ adata_rna_list.append(adata_rna)
+ adata_atac_list.append(adata_atac)
+ 
+all_adata_rna=ad.concat(adata_rna_list,merge = &quot;same&quot;)
+all_adata_rna
+all_adata_atac=ad.concat(adata_atac_list,merge = &quot;same&quot;)
+all_adata_atac
+
+all_adata_rna.write(&quot;/database/wangrong/Results/0712_ATAC+RNA/python/10.28.all_adata_rna.h5ad&quot;)
+all_adata_atac.write(&quot;/database/wangrong/Results/0712_ATAC+RNA/python/10.28.all_adata_atac.h5ad&quot;)</code></pre>
+<pre class="python"><code>adata_result = sc.read_h5ad(&quot;/database/wangrong/Results/0712_ATAC+RNA/python/multivelo_result.h5ad&quot;)
+
+all_adata_rna =sc.read_h5ad(&quot;/database/wangrong/Results/0712_ATAC+RNA/python/10.28.all_adata_rna.h5ad&quot;)
+all_adata_atac =sc.read_h5ad(&quot;/database/wangrong/Results/0712_ATAC+RNA/python/10.28.all_adata_atac.h5ad&quot;)
+
+scv.pp.filter_and_normalize(all_adata_rna, min_shared_counts=10, n_top_genes=1000)
+all_adata_rna = all_adata_rna[all_adata_rna.obs[&#39;celltype&#39;].isin([&#39;Naïve CD4+ T cells&#39;,&#39;CD4+ Tcm&#39;,&#39;Treg&#39;])]
+mv.tfidf_norm(all_adata_atac)
+
+shared_cells = pd.Index(np.intersect1d(all_adata_rna.obs_names, all_adata_atac.obs_names))
+shared_genes = pd.Index(np.intersect1d(all_adata_rna.var_names, all_adata_atac.var_names))
+print(len(shared_cells), len(shared_genes))
+
+all_adata_rna=ad.concat(adata_rna_list,merge = &quot;same&quot;)
+all_adata_rna
+all_rna = all_adata_rna[shared_cells, shared_genes]
+all_atac = all_adata_atac[shared_cells, shared_genes]
+
+scv.pp.normalize_per_cell(all_rna)
+scv.pp.log1p(all_rna)
+scv.pp.moments(all_rna, n_pcs=30, n_neighbors=50)
+
+#all_rna.obs[&#39;celltype&#39;] = cell_annot_2.loc[all_rna.obs_names, &#39;celltype&#39;]
+all_rna.obs[&#39;celltype&#39;] = all_rna.obs[&#39;celltype&#39;].astype(&#39;category&#39;)
+
+all_clusters =[&#39;CD14+ mono&#39;]
+all_rna.obs[&#39;celltype&#39;] = all_rna.obs[&#39;celltype&#39;].cat.reorder_categories(all_clusters)
+scv.tl.umap(all_rna)
+scv.pl.umap(all_rna, color=&#39;celltype&#39;,save=&quot;/database/wangrong/Results/0712_ATAC+RNA/python/all.umap_CD14.pdf&quot;)
+
+all_rna.obs_names.to_frame().to_csv(&#39;/database/wangrong/Results/0712_ATAC+RNA/python/all.CD14.test_filter.txt&#39;, header=False, index=False)
+all_rna
+
+scv.pl.umap(all_rna, color=&#39;annotation&#39;,save=&quot;/database/wangrong/Results/0712_ATAC+RNA/python/10.28.ALL.umap_CD4T_annotation.pdf&quot;)
+scv.pl.umap(all_rna, color=&#39;Timepoints&#39;,save=&quot;/database/wangrong/Results/0712_ATAC+RNA/python/10.28.ALL.umap_CD4T_Timepoints.pdf&quot;)
+scv.pl.umap(all_rna, color=&#39;Participants&#39;,save=&quot;/database/wangrong/Results/0712_ATAC+RNA/python/10.28.ALL.umap_CD4T_Participantss.pdf&quot;)
+
+nn_idx = np.loadtxt(&quot;/database/wangrong/Results/0712_ATAC+RNA/python/seurat_nn/10.28.nn_idx.txt&quot;, delimiter=&#39;,&#39;)
+nn_dist = np.loadtxt(&quot;/database/wangrong/Results/0712_ATAC+RNA/python/seurat_nn/10.28.nn_idx.txt&quot;, delimiter=&#39;,&#39;)
+nn_cells = pd.Index(pd.read_csv(&quot;/database/wangrong/Results/0712_ATAC+RNA/python/seurat_nn/10.28.nn_idx.txt&quot;, header=None)[0])
+
+np.all(nn_cells == all_rna.obs_names)
+mv.knn_smooth_chrom(all_atac, nn_idx, nn_dist)
+all_atac</code></pre>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span>
+Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.3.2 (2023-10-31 ucrt)
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+Running under: Windows 10 x64 (build 19045)
+
+Matrix products: default
+
+
+locale:
+[1] LC_COLLATE=Chinese (Simplified)_China.utf8 
+[2] LC_CTYPE=Chinese (Simplified)_China.utf8   
+[3] LC_MONETARY=Chinese (Simplified)_China.utf8
+[4] LC_NUMERIC=C                               
+[5] LC_TIME=Chinese (Simplified)_China.utf8    
+
+time zone: Asia/Shanghai
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] workflowr_1.7.1
+
+loaded via a namespace (and not attached):
+ [1] vctrs_0.6.5       httr_1.4.7        cli_3.6.2         knitr_1.45       
+ [5] rlang_1.1.2       xfun_0.41         stringi_1.8.3     processx_3.8.3   
+ [9] png_0.1-8         promises_1.2.1    jsonlite_1.8.8    glue_1.6.2       
+[13] rprojroot_2.0.4   git2r_0.33.0      htmltools_0.5.7   httpuv_1.6.13    
+[17] ps_1.7.5          sass_0.4.8        rmarkdown_2.25    grid_4.3.2       
+[21] jquerylib_0.1.4   evaluate_0.23     fastmap_1.1.1     yaml_2.3.8       
+[25] lifecycle_1.0.4   whisker_0.4.1     stringr_1.5.1     compiler_4.3.2   
+[29] fs_1.6.3          Rcpp_1.0.11       rstudioapi_0.15.0 later_1.3.2      
+[33] lattice_0.21-9    digest_0.6.33     R6_2.5.1          reticulate_1.34.0
+[37] callr_3.7.3       magrittr_2.0.3    Matrix_1.6-1.1    bslib_0.6.1      
+[41] tools_4.3.2       cachem_1.0.8      getPass_0.2-4    </code></pre>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+https://docs.mathjax.org/en/latest/web/configuration.html. This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
