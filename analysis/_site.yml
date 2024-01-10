@@ -1,17 +1,22 @@
-name: "scMultiomics_SARS-CoV-2_vaccine_analysis"
+name: Single-cell multiomics_ SARS-CoV-2 inactivated vaccine_analysis
 output_dir: ../docs
 navbar:
-  title: "scMultiomics_SARS-CoV-2_vaccine_analysis"
+  title: Single-cell multiomics_SARS-CoV-2 inactivated vaccine_analysis
   left:
   - text: Home
     href: index.html
-  - text: About
-    href: about.html
-  - text: License
-    href: license.html
+  - text: R analysis
+    href: R_analysis.html
+  - text: python analysis
+    href: python_analysis.html
+  right:
+  - icon: fab fa-github
+    text: Source code
+    href: https://github.com/WangRong423/scMultiomics_SARS-CoV-2_vaccine_analysis
 output:
   workflowr::wflow_html:
     toc: yes
     toc_float: yes
+    code_folding: hide
     theme: cosmo
     highlight: textmate
