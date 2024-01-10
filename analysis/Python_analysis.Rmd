@@ -9,10 +9,9 @@ editor_options:
   chunk_output_type: console
 ---
 
-```{r setup, echo=FALSE,eval=FALSE}
+```{python setup, echo=FALSE,eval=FALSE}
 knitr::opts_chunk$set(message=FALSE, error=FALSE, warning=FALSE)
-library(knitr)
-library(rmarkdown)
+
 ```
 
 ##  eGRN analysis
